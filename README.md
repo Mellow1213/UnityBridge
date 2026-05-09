@@ -31,6 +31,21 @@ The connector starts automatically when the Unity Editor opens. It writes
 heartbeat files under `~/.unity-bridge/instances/`, then the Python client can
 discover the running Editor and send commands to `http://127.0.0.1:{port}/command`.
 
+### Recommended Editor setting
+
+By default, Unity can throttle Editor updates when the window is not focused.
+UnityBridge dispatches Unity API work on the Editor main thread, so CLI command
+handling may be delayed while the Editor is in the background.
+
+For the most reliable background responsiveness, set:
+
+```text
+Edit > Preferences > General > Interaction Mode > No Throttling
+```
+
+The connector also requests PlayerLoop updates whenever a CLI request arrives,
+but `No Throttling` is still recommended for the most stable response times.
+
 ### 2. Install the Python client
 
 ```powershell

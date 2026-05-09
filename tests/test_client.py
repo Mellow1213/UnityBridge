@@ -32,7 +32,7 @@ def write_instance(directory: Path, name: str, **overrides: object) -> Path:
         "port": 8090,
         "pid": 1234,
         "unityVersion": "6000.0.0f1",
-        "connectorVersion": "0.3.18",
+        "connectorVersion": "0.1.0",
         "timestamp": 1_700_000_000_000,
         "compileErrors": False,
     }

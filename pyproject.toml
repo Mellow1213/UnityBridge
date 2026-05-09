@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unity-bridge"
+version = "0.1.0"
+description = "Python-native client for the youngwoocho02/unity-cli Unity Connector HTTP protocol."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+  { name = "Unity Agent" }
+]
+dependencies = []
+
+[project.scripts]
+unity-bridge = "unity_cli_native.cli:main"
+unity-cli-native = "unity_cli_native.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

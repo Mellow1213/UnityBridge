@@ -78,13 +78,15 @@ unity-bridge --json instances
 unity-bridge --json call list
 ```
 
+The same CLI is also available as `unity_bridge`.
+
 Module form without installing:
 
 ```powershell
 $env:PYTHONPATH='D:\Code\Codex\CP\UnityBridge\src'
-python -m unity_cli_native status
-python -m unity_cli_native --json instances
-python -m unity_cli_native --json call list
+python -m unity_bridge status
+python -m unity_bridge --json instances
+python -m unity_bridge --json call list
 ```
 
 ## Command Examples
@@ -122,7 +124,7 @@ unity-bridge call --project D:\UnityProjects\MyGame read_console --params '{"cou
 ## Python examples
 
 ```python
-from unity_cli_native import UnityClient
+from unity_bridge import UnityClient
 
 client = UnityClient(project=r"D:\UnityProjects\MyGame")
 status = client.status()

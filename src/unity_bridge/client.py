@@ -19,15 +19,15 @@ ProcessDeadChecker = Callable[[int], bool]
 InstanceResolver = Callable[[], "Instance"]
 
 
-class UnityCliNativeError(Exception):
-    """Base error for the Python-native Unity CLI client."""
+class UnityBridgeError(Exception):
+    """Base error for the UnityBridge Python client."""
 
 
-class DiscoveryError(UnityCliNativeError):
+class DiscoveryError(UnityBridgeError):
     """Raised when no suitable Unity Connector instance can be found."""
 
 
-class UnityConnectionError(UnityCliNativeError):
+class UnityConnectionError(UnityBridgeError):
     """Raised when the Unity Connector cannot be reached."""
 
 

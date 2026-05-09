@@ -2,7 +2,7 @@ from .client import CommandResponse
 from .client import DiscoveryError
 from .client import Instance
 from .client import UnityClient
-from .client import UnityCliNativeError
+from .client import UnityBridgeError
 from .client import UnityConnectionError
 from .client import UnityHttpError
 from .client import discover_instance
@@ -16,7 +16,7 @@ __all__ = [
     "DiscoveryError",
     "Instance",
     "UnityClient",
-    "UnityCliNativeError",
+    "UnityBridgeError",
     "UnityConnectionError",
     "UnityHttpError",
     "discover_instance",

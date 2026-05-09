@@ -9,7 +9,7 @@ from typing import Any
 from .client import CommandResponse
 from .client import DiscoveryError
 from .client import Instance
-from .client import UnityCliNativeError
+from .client import UnityBridgeError
 from .client import UnityClient
 
 
@@ -34,7 +34,7 @@ def build_parser() -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)
     add_common_options(parent, json_option=True, suppress_defaults=True)
 
-    parser = argparse.ArgumentParser(prog="unity-cli-native")
+    parser = argparse.ArgumentParser(prog="unity-bridge")
     add_common_options(parser, json_option=True, suppress_defaults=False)
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -81,7 +81,7 @@ def main(argv: list[str] | None = None) -> int:
             _print(instance, json_output=args.json)
             return 0
 
-    except UnityCliNativeError as exc:
+    except UnityBridgeError as exc:
         if args.json:
             print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False, indent=2), file=sys.stderr)
         else:

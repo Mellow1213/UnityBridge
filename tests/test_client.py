@@ -13,15 +13,15 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from unity_cli_native import CommandResponse
-from unity_cli_native import DiscoveryError
-from unity_cli_native import Instance
-from unity_cli_native import UnityClient
-from unity_cli_native import discover_instance
-from unity_cli_native import find_active_by_port
-from unity_cli_native import find_by_port
-from unity_cli_native import scan_instances
-from unity_cli_native import send_command
+from unity_bridge import CommandResponse
+from unity_bridge import DiscoveryError
+from unity_bridge import Instance
+from unity_bridge import UnityClient
+from unity_bridge import discover_instance
+from unity_bridge import find_active_by_port
+from unity_bridge import find_by_port
+from unity_bridge import scan_instances
+from unity_bridge import send_command
 
 
 def write_instance(directory: Path, name: str, **overrides: object) -> Path:

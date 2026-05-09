@@ -77,13 +77,15 @@ unity-bridge --json instances
 unity-bridge --json call list
 ```
 
+같은 CLI를 `unity_bridge` 명령어로도 사용할 수 있습니다.
+
 설치하지 않고 모듈 경로로 실행:
 
 ```powershell
 $env:PYTHONPATH='D:\Code\Codex\CP\UnityBridge\src'
-python -m unity_cli_native status
-python -m unity_cli_native --json instances
-python -m unity_cli_native --json call list
+python -m unity_bridge status
+python -m unity_bridge --json instances
+python -m unity_bridge --json call list
 ```
 
 ## 명령 예시
@@ -121,7 +123,7 @@ unity-bridge call --project D:\UnityProjects\MyGame read_console --params '{"cou
 ## Python 사용 예시
 
 ```python
-from unity_cli_native import UnityClient
+from unity_bridge import UnityClient
 
 client = UnityClient(project=r"D:\UnityProjects\MyGame")
 status = client.status()

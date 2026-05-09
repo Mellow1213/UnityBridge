@@ -28,7 +28,7 @@ Unity Editor에서:
 4. 아래 URL을 붙여넣습니다.
 
 ```text
-https://github.com/zjxps2007/UnityBridge.git?path=unity-connector
+https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
 ```
 
 Connector는 Unity Editor가 열릴 때 자동으로 시작됩니다. 실행 중에는
@@ -58,13 +58,13 @@ unity-bridge --json call list
 Unity Package Manager에 아래 URL을 넣으면 됩니다.
 
 ```text
-https://github.com/zjxps2007/UnityBridge.git?path=unity-connector
+https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
 ```
 
 나중에 tag를 배포하면 특정 버전으로 고정할 수 있습니다.
 
 ```text
-https://github.com/zjxps2007/UnityBridge.git?path=unity-connector#v0.1.0
+https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector#v0.1.0
 ```
 
 ## CLI 사용법
@@ -141,6 +141,6 @@ python -m unittest discover -s tests
 
 UnityBridge는 MIT License로 배포됩니다.
 
-`unity-connector`의 일부는 MIT License로 배포되는
+`unity-bridge-connector`의 일부는 MIT License로 배포되는
 `youngwoocho02/unity-cli` Unity Connector를 기반으로 합니다. 자세한 고지는 `NOTICE.md`를
 확인하세요.

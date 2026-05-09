@@ -29,7 +29,7 @@ In Unity Editor:
 4. Paste:
 
 ```text
-https://github.com/zjxps2007/UnityBridge.git?path=unity-connector
+https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
 ```
 
 The connector starts automatically when the Unity Editor opens. It writes
@@ -59,13 +59,13 @@ unity-bridge --json call list
 Add the Unity Connector package from this repository:
 
 ```text
-https://github.com/zjxps2007/UnityBridge.git?path=unity-connector
+https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
 ```
 
 To pin a version after tags are published:
 
 ```text
-https://github.com/zjxps2007/UnityBridge.git?path=unity-connector#v0.1.0
+https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector#v0.1.0
 ```
 
 ## CLI Usage
@@ -142,5 +142,5 @@ python -m unittest discover -s tests
 
 UnityBridge is licensed under the MIT License.
 
-Portions of `unity-connector` are based on the MIT-licensed
+Portions of `unity-bridge-connector` are based on the MIT-licensed
 `youngwoocho02/unity-cli` Unity Connector. See `NOTICE.md`.

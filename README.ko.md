@@ -33,14 +33,23 @@ Connector는 Unity Editor가 열릴 때 자동으로 시작됩니다. 실행 중
 ### 2. Python 클라이언트 설치
 
 ```powershell
+python -m pip install --upgrade "git+https://github.com/zjxps2007/UnityBridge.git"
+```
+
+저장소가 public이면 PowerShell 설치 스크립트를 바로 실행할 수도 있습니다.
+
+```powershell
 irm https://raw.githubusercontent.com/zjxps2007/UnityBridge/main/install.ps1 | iex
 ```
 
-설치 스크립트는 패키지를 업데이트하고, 필요하면 Python Scripts 경로를 사용자 PATH에 추가합니다.
-수동 설치도 가능합니다.
+private 저장소에서는 `raw.githubusercontent.com`이 인증 없이 접근되지 않아 `404`가 날 수
+있습니다. 이 경우 위의 `pip install` 명령을 쓰거나 저장소를 clone한 뒤 `.\install.ps1`을
+실행하세요.
 
 ```powershell
-python -m pip install --upgrade "git+https://github.com/zjxps2007/UnityBridge.git"
+git clone https://github.com/zjxps2007/UnityBridge.git
+cd UnityBridge
+.\install.ps1
 ```
 
 ### 3. 연결 확인

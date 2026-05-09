@@ -34,14 +34,23 @@ discover the running Editor and send commands to `http://127.0.0.1:{port}/comman
 ### 2. Install the Python client
 
 ```powershell
+python -m pip install --upgrade "git+https://github.com/zjxps2007/UnityBridge.git"
+```
+
+If this repository is public, the PowerShell installer can also be run directly:
+
+```powershell
 irm https://raw.githubusercontent.com/zjxps2007/UnityBridge/main/install.ps1 | iex
 ```
 
-The installer updates the package and adds the Python Scripts directory to the
-user PATH when needed. Manual install is also possible:
+For private repositories, `raw.githubusercontent.com` requires authentication and
+may return `404`. In that case, use the `pip install` command above or clone the
+repository and run `.\install.ps1`.
 
 ```powershell
-python -m pip install --upgrade "git+https://github.com/zjxps2007/UnityBridge.git"
+git clone https://github.com/zjxps2007/UnityBridge.git
+cd UnityBridge
+.\install.ps1
 ```
 
 ### 3. Check the connection

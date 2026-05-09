@@ -8,7 +8,7 @@ Python-native 클라이언트와 Unity 패키지입니다.
 Python 클라이언트는 별도의 CLI 바이너리를 호출하지 않습니다. 대신 Unity Editor 안에서 실행되는
 connector와 직접 통신합니다.
 
-1. `~/.unity-cli/instances/*.json` heartbeat 파일을 읽습니다.
+1. `~/.unity-bridge/instances/*.json` heartbeat 파일을 읽습니다.
 2. 포트, 프로젝트 경로, 현재 작업 경로, 최신 heartbeat를 기준으로 실행 중인 Unity Editor를 선택합니다.
 3. `http://127.0.0.1:{port}/command`로 JSON 요청을 보냅니다.
 
@@ -27,7 +27,7 @@ https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
 ```
 
 Connector는 Unity Editor가 열릴 때 자동으로 시작됩니다. 실행 중에는
-`~/.unity-cli/instances/` 아래에 heartbeat 파일을 기록합니다. Python 클라이언트는 이 파일을
+`~/.unity-bridge/instances/` 아래에 heartbeat 파일을 기록합니다. Python 클라이언트는 이 파일을
 읽어 Unity Editor를 발견하고 `http://127.0.0.1:{port}/command`로 명령을 보냅니다.
 
 ### 2. Python 클라이언트 설치

@@ -22,6 +22,7 @@ from unity_bridge import find_active_by_port
 from unity_bridge import find_by_port
 from unity_bridge import scan_instances
 from unity_bridge import send_command
+from unity_bridge.client import default_instances_dir
 
 
 def write_instance(directory: Path, name: str, **overrides: object) -> Path:
@@ -83,6 +84,9 @@ class FakeUnityServer:
 
 
 class DiscoveryTests(unittest.TestCase):
+    def test_default_instances_dir_uses_unity_bridge_home_directory(self) -> None:
+        self.assertEqual(default_instances_dir(), Path.home() / ".unity-bridge" / "instances")
+
     def test_scan_instances_ignores_invalid_files_and_removes_confirmed_dead_pids(self) -> None:
         with TemporaryDirectory() as tmp:
             directory = Path(tmp)

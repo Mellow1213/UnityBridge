@@ -8,7 +8,7 @@ a local HTTP connector.
 The Python client does not require a separate CLI binary. It talks directly to
 the Unity connector by:
 
-1. Reading instance heartbeat files from `~/.unity-cli/instances/*.json`.
+1. Reading instance heartbeat files from `~/.unity-bridge/instances/*.json`.
 2. Selecting a running Unity Editor by port, project path, current working
    directory, or most recent heartbeat.
 3. Sending JSON to `http://127.0.0.1:{port}/command`.
@@ -28,7 +28,7 @@ https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
 ```
 
 The connector starts automatically when the Unity Editor opens. It writes
-heartbeat files under `~/.unity-cli/instances/`, then the Python client can
+heartbeat files under `~/.unity-bridge/instances/`, then the Python client can
 discover the running Editor and send commands to `http://127.0.0.1:{port}/command`.
 
 ### 2. Install the Python client

@@ -175,7 +175,7 @@ class UnityClient:
 
 
 def default_instances_dir() -> Path:
-    return Path.home() / ".unity-cli" / "instances"
+    return Path.home() / ".unity-bridge" / "instances"
 
 
 def scan_instances(

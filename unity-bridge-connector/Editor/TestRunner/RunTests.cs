@@ -16,7 +16,7 @@ namespace UnityCliConnector.TestRunner
     public static class RunTests
     {
         internal static readonly string StatusDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".unity-cli", "status");
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".unity-bridge", "status");
 
         public class Parameters
         {

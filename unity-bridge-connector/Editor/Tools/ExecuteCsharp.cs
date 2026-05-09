@@ -88,7 +88,7 @@ namespace UnityCliConnector.Tools
         private static object CompileAndExecute(string source, string cscOverride = null, string dotnetOverride = null)
         {
             var utf8 = new UTF8Encoding(false);
-            var tmpDir = Path.Combine(Path.GetTempPath(), "unity-cli-exec");
+            var tmpDir = Path.Combine(Path.GetTempPath(), "unity-bridge-exec");
             Directory.CreateDirectory(tmpDir);
 
             var id = Guid.NewGuid().ToString("N").Substring(0, 8);

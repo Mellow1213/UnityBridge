@@ -15,7 +15,44 @@ the Unity Connector by:
 It is intentionally separate from `D:\Code\Codex\Agent` so it can be tested
 and evolved before integration.
 
-## Unity setup
+## Quick Start
+
+### 1. Install the Unity package
+
+In Unity Editor:
+
+1. Open `Window > Package Manager`.
+2. Click `+`.
+3. Choose `Add package from git URL...`.
+4. Paste:
+
+```text
+https://github.com/zjxps2007/UnityBridge.git?path=unity-connector
+```
+
+The connector starts automatically when the Unity Editor opens. It writes
+heartbeat files under `~/.unity-cli/instances/`, then the Python client can
+discover the running Editor and send commands to `http://127.0.0.1:{port}/command`.
+
+### 2. Install the Python client
+
+```powershell
+git clone https://github.com/zjxps2007/UnityBridge.git
+cd UnityBridge
+python -m pip install -e .
+```
+
+### 3. Check the connection
+
+Keep the Unity project open, then run:
+
+```powershell
+unity-bridge status
+unity-bridge --json instances
+unity-bridge --json call list
+```
+
+## Unity Package URL
 
 Add the Unity Connector package from this repository:
 
@@ -23,33 +60,61 @@ Add the Unity Connector package from this repository:
 https://github.com/zjxps2007/UnityBridge.git?path=unity-connector
 ```
 
-In Unity:
+To pin a version after tags are published:
 
-1. Open `Window > Package Manager`.
-2. Click `+`.
-3. Choose `Add package from git URL...`.
-4. Paste the URL above.
-
-The connector starts automatically when the Unity Editor opens. It writes
-heartbeat files under `~/.unity-cli/instances/`, then the Python client can
-discover the running Editor and send commands to `http://127.0.0.1:{port}/command`.
-
-## Install for local development
-
-```powershell
-cd D:\Code\Codex\CP\UnityBridge
-python -m pip install -e .
+```text
+https://github.com/zjxps2007/UnityBridge.git?path=unity-connector#v0.1.0
 ```
 
-## CLI examples
+## CLI Usage
+
+Installed command:
 
 ```powershell
+unity-bridge status
+unity-bridge --json instances
+unity-bridge --json call list
+```
+
+Module form without installing:
+
+```powershell
+$env:PYTHONPATH='D:\Code\Codex\CP\UnityBridge\src'
 python -m unity_cli_native status
 python -m unity_cli_native --json instances
 python -m unity_cli_native --json call list
-python -m unity_cli_native call read_console --params '{"count": 20, "types": ["error", "warning", "log"]}'
-python -m unity_cli_native call --project D:\UnityProjects\MyGame manage_editor --params '{"action": "play", "wait_for_completion": true}'
-python -m unity_cli_native call refresh_unity --params '{}'
+```
+
+## Command Examples
+
+UnityBridge sends the Unity Connector command name directly.
+
+```powershell
+# Enter play mode and wait until Unity confirms it.
+unity-bridge call manage_editor --params '{"action":"play","wait_for_completion":true}'
+
+# Stop play mode.
+unity-bridge call manage_editor --params '{"action":"stop"}'
+
+# Refresh assets.
+unity-bridge call refresh_unity --params '{}'
+
+# Read console logs.
+unity-bridge call read_console --params '{"count":20,"types":["error","warning","log"]}'
+
+# Run EditMode tests.
+unity-bridge call run_tests --params '{"mode":"EditMode"}'
+
+# Execute a safe Unity menu item.
+unity-bridge call execute_menu_item --params '{"menu_path":"File/Save Project"}'
+```
+
+Select a specific Unity Editor instance:
+
+```powershell
+unity-bridge --project D:\UnityProjects\MyGame status
+unity-bridge --port 8090 status
+unity-bridge call --project D:\UnityProjects\MyGame read_console --params '{"count":20}'
 ```
 
 ## Python examples
@@ -68,6 +133,12 @@ print(result.success, result.message, result.data)
 ## Run tests
 
 ```powershell
-cd D:\Code\Codex\CP
-python -m unittest discover -s UnityBridge\tests
+python -m unittest discover -s tests
 ```
+
+## License
+
+UnityBridge is licensed under the MIT License.
+
+Portions of `unity-connector` are based on the MIT-licensed
+`youngwoocho02/unity-cli` Unity Connector. See `NOTICE.md`.

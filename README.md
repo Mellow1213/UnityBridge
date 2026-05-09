@@ -45,12 +45,19 @@ irm https://raw.githubusercontent.com/zjxps2007/UnityBridge/main/install.ps1 | i
 
 For private repositories, `raw.githubusercontent.com` requires authentication and
 may return `404`. In that case, use the `pip install` command above or clone the
-repository and run `.\install.ps1`.
+repository and run `.\install.cmd`.
 
 ```powershell
 git clone https://github.com/zjxps2007/UnityBridge.git
 cd UnityBridge
-.\install.ps1
+.\install.cmd
+```
+
+If you prefer running the PowerShell script directly, bypass the execution policy
+for this process only:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 ### 3. Check the connection

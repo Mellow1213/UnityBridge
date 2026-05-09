@@ -43,13 +43,19 @@ irm https://raw.githubusercontent.com/zjxps2007/UnityBridge/main/install.ps1 | i
 ```
 
 private 저장소에서는 `raw.githubusercontent.com`이 인증 없이 접근되지 않아 `404`가 날 수
-있습니다. 이 경우 위의 `pip install` 명령을 쓰거나 저장소를 clone한 뒤 `.\install.ps1`을
+있습니다. 이 경우 위의 `pip install` 명령을 쓰거나 저장소를 clone한 뒤 `.\install.cmd`를
 실행하세요.
 
 ```powershell
 git clone https://github.com/zjxps2007/UnityBridge.git
 cd UnityBridge
-.\install.ps1
+.\install.cmd
+```
+
+PowerShell 스크립트를 직접 실행하고 싶다면 현재 실행에만 Execution Policy를 우회할 수 있습니다.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
 ### 3. 연결 확인

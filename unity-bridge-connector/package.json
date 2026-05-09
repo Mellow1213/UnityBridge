@@ -2,7 +2,7 @@
   "name": "com.zjxps2007.unity-bridge-connector",
   "version": "0.1.0",
   "displayName": "UnityBridge Connector",
-  "description": "HTTP bridge for UnityBridge. Based on the MIT-licensed unity-cli connector.",
+  "description": "Local HTTP bridge package for UnityBridge.",
   "unity": "6000.0",
   "author": {
     "name": "UnityBridge contributors",

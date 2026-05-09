@@ -2,12 +2,11 @@
 
 [한국어](README.ko.md) | English
 
-Python-native client and Unity package for the
-[`youngwoocho02/unity-cli`](https://github.com/youngwoocho02/unity-cli)
-Unity Connector protocol.
+Python-native client and Unity package for controlling the Unity Editor through
+a local HTTP connector.
 
-The Python client does not call the `unity-cli` binary. It talks directly to
-the Unity Connector by:
+The Python client does not require a separate CLI binary. It talks directly to
+the Unity connector by:
 
 1. Reading instance heartbeat files from `~/.unity-cli/instances/*.json`.
 2. Selecting a running Unity Editor by port, project path, current working
@@ -144,5 +143,4 @@ python -m unittest discover -s tests
 
 UnityBridge is licensed under the MIT License.
 
-Portions of `unity-bridge-connector` are based on the MIT-licensed
-`youngwoocho02/unity-cli` Unity Connector. See `NOTICE.md`.
+Third-party license notices are listed in `NOTICE.md`.

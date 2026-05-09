@@ -2,12 +2,11 @@
 
 한국어 | [English](README.md)
 
-UnityBridge는
-[`youngwoocho02/unity-cli`](https://github.com/youngwoocho02/unity-cli)의
-Unity Connector 프로토콜과 호환되는 Python-native 클라이언트와 Unity 패키지입니다.
+UnityBridge는 로컬 HTTP connector를 통해 Unity Editor를 제어하는
+Python-native 클라이언트와 Unity 패키지입니다.
 
-Python 클라이언트는 `unity-cli` 바이너리를 호출하지 않습니다. 대신 Unity Editor 안에서 실행되는
-Connector와 직접 통신합니다.
+Python 클라이언트는 별도의 CLI 바이너리를 호출하지 않습니다. 대신 Unity Editor 안에서 실행되는
+connector와 직접 통신합니다.
 
 1. `~/.unity-cli/instances/*.json` heartbeat 파일을 읽습니다.
 2. 포트, 프로젝트 경로, 현재 작업 경로, 최신 heartbeat를 기준으로 실행 중인 Unity Editor를 선택합니다.
@@ -143,6 +142,4 @@ python -m unittest discover -s tests
 
 UnityBridge는 MIT License로 배포됩니다.
 
-`unity-bridge-connector`의 일부는 MIT License로 배포되는
-`youngwoocho02/unity-cli` Unity Connector를 기반으로 합니다. 자세한 고지는 `NOTICE.md`를
-확인하세요.
+제3자 라이선스 고지는 `NOTICE.md`를 확인하세요.

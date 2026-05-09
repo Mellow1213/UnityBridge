@@ -134,13 +134,13 @@ unity-bridge call manage_editor --params '{"action":"stop"}'
 unity-bridge call refresh_unity --params '{}'
 
 # 콘솔 로그 읽기
-unity-bridge call read_console --params '{"count":20,"types":["error","warning","log"]}'
+unity-bridge call console --params '{"count":20,"types":["error","warning","log"]}'
 
 # EditMode 테스트 실행
 unity-bridge call run_tests --params '{"mode":"EditMode"}'
 
 # 안전한 Unity 메뉴 실행
-unity-bridge call execute_menu_item --params '{"menu_path":"File/Save Project"}'
+unity-bridge call menu --params '{"menu_path":"File/Save Project"}'
 ```
 
 특정 Unity Editor 인스턴스를 선택할 수도 있습니다.
@@ -148,7 +148,7 @@ unity-bridge call execute_menu_item --params '{"menu_path":"File/Save Project"}'
 ```powershell
 unity-bridge --project D:\UnityProjects\MyGame status
 unity-bridge --port 8090 status
-unity-bridge call --project D:\UnityProjects\MyGame read_console --params '{"count":20}'
+unity-bridge --project D:\UnityProjects\MyGame call console --params '{"count":20}'
 ```
 
 ## Python 사용 예시

@@ -136,13 +136,13 @@ unity-bridge call manage_editor --params '{"action":"stop"}'
 unity-bridge call refresh_unity --params '{}'
 
 # Read console logs.
-unity-bridge call read_console --params '{"count":20,"types":["error","warning","log"]}'
+unity-bridge call console --params '{"count":20,"types":["error","warning","log"]}'
 
 # Run EditMode tests.
 unity-bridge call run_tests --params '{"mode":"EditMode"}'
 
 # Execute a safe Unity menu item.
-unity-bridge call execute_menu_item --params '{"menu_path":"File/Save Project"}'
+unity-bridge call menu --params '{"menu_path":"File/Save Project"}'
 ```
 
 Select a specific Unity Editor instance:
@@ -150,7 +150,7 @@ Select a specific Unity Editor instance:
 ```powershell
 unity-bridge --project D:\UnityProjects\MyGame status
 unity-bridge --port 8090 status
-unity-bridge call --project D:\UnityProjects\MyGame read_console --params '{"count":20}'
+unity-bridge --project D:\UnityProjects\MyGame call console --params '{"count":20}'
 ```
 
 ## Python examples

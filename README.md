@@ -20,12 +20,8 @@ and evolved before integration.
 
 ### 1. Install the Unity package
 
-In Unity Editor:
-
-1. Open `Window > Package Manager`.
-2. Click `+`.
-3. Choose `Add package from git URL...`.
-4. Paste:
+In Unity Editor, open `Window > Package Manager > + > Add package from git URL...`
+and paste:
 
 ```text
 https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
@@ -38,9 +34,7 @@ discover the running Editor and send commands to `http://127.0.0.1:{port}/comman
 ### 2. Install the Python client
 
 ```powershell
-git clone https://github.com/zjxps2007/UnityBridge.git
-cd UnityBridge
-python -m pip install -e .
+python -m pip install "git+https://github.com/zjxps2007/UnityBridge.git"
 ```
 
 ### 3. Check the connection
@@ -53,15 +47,9 @@ unity-bridge --json instances
 unity-bridge --json call list
 ```
 
-## Unity Package URL
+## Version Pinning
 
-Add the Unity Connector package from this repository:
-
-```text
-https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
-```
-
-To pin a version after tags are published:
+After tags are published, append the tag to the Unity package URL:
 
 ```text
 https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector#v0.1.0
@@ -136,6 +124,9 @@ print(result.success, result.message, result.data)
 ## Run tests
 
 ```powershell
+git clone https://github.com/zjxps2007/UnityBridge.git
+cd UnityBridge
+python -m pip install -e .
 python -m unittest discover -s tests
 ```
 

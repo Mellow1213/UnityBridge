@@ -19,12 +19,8 @@ connector와 직접 통신합니다.
 
 ### 1. Unity 패키지 설치
 
-Unity Editor에서:
-
-1. `Window > Package Manager`를 엽니다.
-2. `+` 버튼을 누릅니다.
-3. `Add package from git URL...`을 선택합니다.
-4. 아래 URL을 붙여넣습니다.
+Unity Editor에서 `Window > Package Manager > + > Add package from git URL...`을 열고
+아래 URL을 붙여넣습니다.
 
 ```text
 https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
@@ -37,9 +33,7 @@ Connector는 Unity Editor가 열릴 때 자동으로 시작됩니다. 실행 중
 ### 2. Python 클라이언트 설치
 
 ```powershell
-git clone https://github.com/zjxps2007/UnityBridge.git
-cd UnityBridge
-python -m pip install -e .
+python -m pip install "git+https://github.com/zjxps2007/UnityBridge.git"
 ```
 
 ### 3. 연결 확인
@@ -52,15 +46,9 @@ unity-bridge --json instances
 unity-bridge --json call list
 ```
 
-## Unity 패키지 URL
+## 버전 고정
 
-Unity Package Manager에 아래 URL을 넣으면 됩니다.
-
-```text
-https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
-```
-
-나중에 tag를 배포하면 특정 버전으로 고정할 수 있습니다.
+tag를 배포한 뒤에는 Unity 패키지 URL 뒤에 tag를 붙여 고정할 수 있습니다.
 
 ```text
 https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector#v0.1.0
@@ -135,6 +123,9 @@ print(result.success, result.message, result.data)
 ## 테스트 실행
 
 ```powershell
+git clone https://github.com/zjxps2007/UnityBridge.git
+cd UnityBridge
+python -m pip install -e .
 python -m unittest discover -s tests
 ```
 

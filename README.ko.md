@@ -42,8 +42,8 @@ Unity 프로젝트를 열어둔 상태에서 실행합니다.
 
 ```powershell
 unity-bridge status
-unity-bridge --json instances
-unity-bridge --json call list
+unity-bridge instances
+unity-bridge call list
 ```
 
 ## 버전 고정
@@ -60,19 +60,26 @@ https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector#v0.1.0
 
 ```powershell
 unity-bridge status
-unity-bridge --json instances
-unity-bridge --json call list
+unity-bridge instances
+unity-bridge call list
 ```
 
 같은 CLI를 `unity_bridge` 명령어로도 사용할 수 있습니다.
+
+다른 프로그램이나 에이전트가 결과를 파싱해야 할 때만 `--json` 옵션을 붙입니다.
+
+```powershell
+unity-bridge --json instances
+unity-bridge --json call list
+```
 
 설치하지 않고 모듈 경로로 실행:
 
 ```powershell
 $env:PYTHONPATH='D:\Code\Codex\CP\UnityBridge\src'
 python -m unity_bridge status
-python -m unity_bridge --json instances
-python -m unity_bridge --json call list
+python -m unity_bridge instances
+python -m unity_bridge call list
 ```
 
 ## 명령 예시

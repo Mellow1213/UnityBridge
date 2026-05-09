@@ -43,8 +43,8 @@ Keep the Unity project open, then run:
 
 ```powershell
 unity-bridge status
-unity-bridge --json instances
-unity-bridge --json call list
+unity-bridge instances
+unity-bridge call list
 ```
 
 ## Version Pinning
@@ -61,19 +61,26 @@ Installed command:
 
 ```powershell
 unity-bridge status
-unity-bridge --json instances
-unity-bridge --json call list
+unity-bridge instances
+unity-bridge call list
 ```
 
 The same CLI is also available as `unity_bridge`.
+
+Add `--json` when another program or agent should parse the output:
+
+```powershell
+unity-bridge --json instances
+unity-bridge --json call list
+```
 
 Module form without installing:
 
 ```powershell
 $env:PYTHONPATH='D:\Code\Codex\CP\UnityBridge\src'
 python -m unity_bridge status
-python -m unity_bridge --json instances
-python -m unity_bridge --json call list
+python -m unity_bridge instances
+python -m unity_bridge call list
 ```
 
 ## Command Examples

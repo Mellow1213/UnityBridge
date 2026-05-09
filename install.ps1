@@ -143,21 +143,21 @@ def add(path):
     if path and path not in paths:
         paths.append(path)
 
-add(sysconfig.get_path("scripts"))
+add(sysconfig.get_path('scripts'))
 
-scheme = "nt_user" if os.name == "nt" else "posix_user"
+scheme = 'nt_user' if os.name == 'nt' else 'posix_user'
 try:
-    add(sysconfig.get_path("scripts", scheme))
+    add(sysconfig.get_path('scripts', scheme))
 except Exception:
     pass
 
 try:
     user_base = site.getuserbase()
-    if os.name == "nt":
-        version = f"Python{sysconfig.get_python_version().replace('.', '')}"
-        add(os.path.join(user_base, version, "Scripts"))
+    if os.name == 'nt':
+        version = 'Python' + sysconfig.get_python_version().replace('.', '')
+        add(os.path.join(user_base, version, 'Scripts'))
     else:
-        add(os.path.join(user_base, "bin"))
+        add(os.path.join(user_base, 'bin'))
 except Exception:
     pass
 

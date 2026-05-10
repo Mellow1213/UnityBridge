@@ -15,6 +15,32 @@ from .client import UnityBridgeError
 from .client import UnityClient
 
 
+KNOWN_COMMANDS = {
+    "instances",
+    "status",
+    "tools",
+    "refresh",
+    "console",
+    "test",
+    "editor",
+    "menu",
+    "reserialize",
+    "profiler",
+    "screenshot",
+    "exec",
+    "call",
+    "wait-ready",
+}
+
+GLOBAL_VALUE_OPTIONS = {
+    "--project": "project",
+    "--port": "port",
+    "--timeout-ms": "timeout_ms",
+    "--instances-dir": "instances_dir",
+}
+GLOBAL_BOOL_OPTIONS = {"--json": "json"}
+
+
 def add_common_options(
     parser: argparse.ArgumentParser,
     *,
@@ -36,7 +62,13 @@ def build_parser() -> argparse.ArgumentParser:
     parent = argparse.ArgumentParser(add_help=False)
     add_common_options(parent, json_option=True, suppress_defaults=True)
 
-    parser = argparse.ArgumentParser(prog="unity-bridge")
+    parser = argparse.ArgumentParser(
+        prog="unity-bridge",
+        epilog=(
+            "Unknown command names are sent directly to Unity Connector, so project "
+            "custom tools can be called as: unity-bridge my_tool --x 1 --params '{...}'"
+        ),
+    )
     add_common_options(parser, json_option=True, suppress_defaults=False)
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -99,6 +131,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if _is_direct_tool_invocation(argv):
+        return _main_direct_tool(argv)
+
     args = build_parser().parse_args(argv)
     client = UnityClient(
         project=getattr(args, "project", None),
@@ -217,6 +253,192 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     return 2
+
+
+def _is_direct_tool_invocation(argv: list[str]) -> bool:
+    command_index = _find_command_index(argv)
+    if command_index is None:
+        return False
+    return argv[command_index] not in KNOWN_COMMANDS
+
+
+def _main_direct_tool(argv: list[str]) -> int:
+    try:
+        parsed = _parse_direct_tool_args(argv)
+        client = UnityClient(
+            project=parsed["project"],
+            port=parsed["port"],
+            timeout_ms=parsed["timeout_ms"],
+            instances_dir=parsed["instances_dir"],
+        )
+        response = client.call(parsed["command"], parsed["params"])
+        _print(response, json_output=parsed["json"])
+        return 0 if response.success else 1
+    except UnityBridgeError as exc:
+        if _direct_json_requested(argv):
+            print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False, indent=2), file=sys.stderr)
+        else:
+            print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+
+
+def _parse_direct_tool_args(argv: list[str]) -> dict[str, Any]:
+    command_index = _find_command_index(argv)
+    if command_index is None:
+        raise DiscoveryError("missing connector command")
+
+    command = argv[command_index]
+    tokens = argv[:command_index] + argv[command_index + 1 :]
+    parsed: dict[str, Any] = {
+        "command": command,
+        "project": None,
+        "port": None,
+        "timeout_ms": 120_000,
+        "instances_dir": None,
+        "json": False,
+        "params": {},
+    }
+    positional: list[Any] = []
+
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        if token == "--":
+            positional.extend(_coerce_param_value(item) for item in tokens[i + 1 :])
+            break
+
+        global_match = _split_global_value_option(token)
+        if global_match is not None:
+            name, value, consumed_next = global_match
+            if consumed_next:
+                if i + 1 >= len(tokens):
+                    raise DiscoveryError(f"{token} requires a value")
+                value = tokens[i + 1]
+            parsed[name] = _coerce_global_value(name, value)
+            i += 2 if consumed_next else 1
+            continue
+
+        if token in GLOBAL_BOOL_OPTIONS:
+            parsed[GLOBAL_BOOL_OPTIONS[token]] = True
+            i += 1
+            continue
+
+        if token == "--params":
+            if i + 1 >= len(tokens):
+                raise DiscoveryError("--params requires a JSON object")
+            parsed["params"].update(_parse_params(tokens[i + 1]))
+            i += 2
+            continue
+
+        if token.startswith("--params="):
+            parsed["params"].update(_parse_params(token.split("=", 1)[1]))
+            i += 1
+            continue
+
+        if token.startswith("--no-") and len(token) > len("--no-"):
+            _assign_param(parsed["params"], _flag_to_param_name(token[5:]), False)
+            i += 1
+            continue
+
+        if token.startswith("--") and len(token) > 2:
+            name, value, consumed_next = _split_param_option(token, tokens, i)
+            _assign_param(parsed["params"], name, value)
+            i += 2 if consumed_next else 1
+            continue
+
+        positional.append(_coerce_param_value(token))
+        i += 1
+
+    if positional:
+        existing_args = parsed["params"].get("args")
+        if existing_args is None:
+            parsed["params"]["args"] = positional
+        elif isinstance(existing_args, list):
+            existing_args.extend(positional)
+        else:
+            parsed["params"]["args"] = [existing_args, *positional]
+
+    return parsed
+
+
+def _find_command_index(argv: list[str]) -> int | None:
+    i = 0
+    while i < len(argv):
+        token = argv[i]
+        if token == "--":
+            return i + 1 if i + 1 < len(argv) else None
+        if token in GLOBAL_BOOL_OPTIONS:
+            i += 1
+            continue
+        if token in GLOBAL_VALUE_OPTIONS:
+            i += 2
+            continue
+        if _split_global_value_option(token) is not None:
+            i += 1
+            continue
+        if token.startswith("-"):
+            return None
+        return i
+    return None
+
+
+def _split_global_value_option(token: str) -> tuple[str, str | None, bool] | None:
+    if token in GLOBAL_VALUE_OPTIONS:
+        return GLOBAL_VALUE_OPTIONS[token], None, True
+    for option, name in GLOBAL_VALUE_OPTIONS.items():
+        prefix = option + "="
+        if token.startswith(prefix):
+            return name, token[len(prefix) :], False
+    return None
+
+
+def _coerce_global_value(name: str, value: str | None) -> Any:
+    if value is None:
+        return None
+    if name in {"port", "timeout_ms"}:
+        try:
+            return int(value)
+        except ValueError as exc:
+            raise DiscoveryError(f"--{name.replace('_', '-')} must be an integer") from exc
+    return value
+
+
+def _split_param_option(tokens_value: str, tokens: list[str], index: int) -> tuple[str, Any, bool]:
+    if "=" in tokens_value:
+        raw_name, raw_value = tokens_value[2:].split("=", 1)
+        return _flag_to_param_name(raw_name), _coerce_param_value(raw_value), False
+
+    raw_name = tokens_value[2:]
+    next_index = index + 1
+    if next_index >= len(tokens) or tokens[next_index].startswith("--"):
+        return _flag_to_param_name(raw_name), True, False
+    return _flag_to_param_name(raw_name), _coerce_param_value(tokens[next_index]), True
+
+
+def _flag_to_param_name(value: str) -> str:
+    return value.replace("-", "_")
+
+
+def _coerce_param_value(value: str) -> Any:
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return value
+
+
+def _assign_param(params: dict[str, Any], name: str, value: Any) -> None:
+    if name in params:
+        existing = params[name]
+        if isinstance(existing, list):
+            existing.append(value)
+        else:
+            params[name] = [existing, value]
+        return
+    params[name] = value
+
+
+def _direct_json_requested(argv: list[str]) -> bool:
+    return any(token == "--json" for token in argv)
 
 
 def _read_code_arg(args: argparse.Namespace) -> str:

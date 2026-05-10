@@ -148,6 +148,7 @@ unity-bridge --json console --count 20
 | `unity-bridge exec` | Execute arbitrary C# code inside the Unity Editor. |
 | `unity-bridge call` | Send a raw connector command name and JSON params. |
 | `unity-bridge wait-ready` | Wait until Unity reaches the ready state. |
+| `unity-bridge <tool-name>` | Treat unknown command names as connector/custom tool names and call them directly. |
 
 ### Common Options
 
@@ -226,15 +227,29 @@ unity-bridge exec --code-file .\query.cs
 unity-bridge exec --code "return Unity.Entities.World.All.Count;" --using Unity.Entities
 
 # Raw connector command calls
+unity-bridge list
 unity-bridge call list
 unity-bridge call console --params '{"count":20,"type":"error,warning"}'
 unity-bridge call manage_editor --params '{"action":"play","wait_for_completion":true}'
 unity-bridge call my_custom_tool --params '{"key":"value"}'
+
+# Direct custom tool calls
+unity-bridge spawn --x 1 --y 0 --z 5 --prefab Enemy
+unity-bridge spawn --params '{"x":1,"y":0,"z":5,"prefab":"Enemy"}'
+unity-bridge my_custom_tool --key value --enabled
+unity-bridge my_custom_tool --no-enabled
+unity-bridge my_custom_tool first second
 ```
 
-Detailed `profiler hierarchy` parameters such as `depth`, `root`, and `frames`,
-and arbitrary custom tool parameters, are not all exposed as short CLI flags yet.
-Use `unity-bridge call <command> --params '{...}'` for those cases.
+Unknown command names are sent directly as connector commands. Flags such as
+`--x 1` become params like `{"x": 1}`, and `--my-value` becomes `my_value`.
+Flags without values are sent as `true`; `--no-name` is sent as `false`.
+Plain positional arguments are sent in an `args` array.
+
+Reserved names such as `profiler`, `console`, and `test` are handled by
+UnityBridge's built-in CLI first. If a built-in command needs detailed
+parameters that are not exposed as short flags yet, use
+`unity-bridge call <command> --params '{...}'`.
 
 ## Command Examples
 

@@ -146,6 +146,7 @@ unity-bridge --json console --count 20
 | `unity-bridge exec` | Unity Editor 안에서 임의 C# 코드를 실행합니다. |
 | `unity-bridge call` | connector command 이름과 JSON params를 직접 보내는 raw 호출입니다. |
 | `unity-bridge wait-ready` | Unity가 ready 상태가 될 때까지 대기합니다. |
+| `unity-bridge <tool-name>` | 목록에 없는 명령어는 connector/custom tool 이름으로 보고 직접 호출합니다. |
 
 ### 공통 옵션
 
@@ -224,15 +225,28 @@ unity-bridge exec --code-file .\query.cs
 unity-bridge exec --code "return Unity.Entities.World.All.Count;" --using Unity.Entities
 
 # Raw connector command 호출
+unity-bridge list
 unity-bridge call list
 unity-bridge call console --params '{"count":20,"type":"error,warning"}'
 unity-bridge call manage_editor --params '{"action":"play","wait_for_completion":true}'
 unity-bridge call my_custom_tool --params '{"key":"value"}'
+
+# Custom tool 직접 호출
+unity-bridge spawn --x 1 --y 0 --z 5 --prefab Enemy
+unity-bridge spawn --params '{"x":1,"y":0,"z":5,"prefab":"Enemy"}'
+unity-bridge my_custom_tool --key value --enabled
+unity-bridge my_custom_tool --no-enabled
+unity-bridge my_custom_tool first second
 ```
 
-`profiler hierarchy`의 `depth`, `root`, `frames` 같은 세부 파라미터나 프로젝트 커스텀 도구의
-임의 파라미터는 현재 짧은 CLI 옵션으로 모두 열려 있지는 않습니다. 그런 경우에는
-`unity-bridge call <command> --params '{...}'` 형식을 사용하세요.
+목록에 없는 명령어는 모두 connector command로 직접 전송됩니다. `--x 1` 같은 플래그는
+`{"x": 1}` 형태의 params로 변환되고, `--my-value`는 `my_value`로 변환됩니다. 값이 없는
+플래그는 `true`, `--no-name`은 `false`로 전달됩니다. 일반 위치 인자는 `args` 배열로
+전달됩니다.
+
+단, `profiler`, `console`, `test`처럼 이미 UnityBridge 전용 명령어로 예약된 이름은 전용 CLI가
+먼저 처리합니다. 이런 built-in command에 아직 짧은 옵션으로 열려 있지 않은 세부 파라미터를
+보내려면 `unity-bridge call <command> --params '{...}'` 형식을 사용하세요.
 
 ## 명령 예시
 

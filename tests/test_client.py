@@ -332,6 +332,83 @@ class CliTests(unittest.TestCase):
                 },
             )
 
+    def test_cli_direct_custom_tool_accepts_dynamic_flags(self) -> None:
+        response_body = json.dumps({"success": True, "message": "Enemy spawned"}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port, pid=0)
+
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                exit_code = cli_main(
+                    [
+                        "--instances-dir",
+                        str(directory),
+                        "spawn",
+                        "--x",
+                        "1",
+                        "--y",
+                        "0",
+                        "--z",
+                        "5",
+                        "--prefab",
+                        "Enemy",
+                        "--active",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Enemy spawned", stdout.getvalue())
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "spawn",
+                    "params": {"x": 1, "y": 0, "z": 5, "prefab": "Enemy", "active": True},
+                },
+            )
+
+    def test_cli_direct_custom_tool_accepts_params_json_and_positionals(self) -> None:
+        response_body = json.dumps({"success": True, "message": "ok"}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port, pid=0)
+
+            with redirect_stdout(StringIO()):
+                exit_code = cli_main(
+                    [
+                        "my_custom_tool",
+                        "--instances-dir",
+                        str(directory),
+                        "--params",
+                        '{"prefab":"Enemy","count":2}',
+                        "--count",
+                        "3",
+                        "first",
+                        "second",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "my_custom_tool",
+                    "params": {"prefab": "Enemy", "count": [2, 3], "args": ["first", "second"]},
+                },
+            )
+
+    def test_cli_direct_connector_command_supports_list_alias(self) -> None:
+        response_body = json.dumps({"success": True, "message": "Listed tools", "data": []}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port, pid=0)
+
+            with redirect_stdout(StringIO()):
+                exit_code = cli_main(["--instances-dir", str(directory), "list"])
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(server.received[0]["body"], {"command": "list", "params": {}})
+
 
 if __name__ == "__main__":
     unittest.main()

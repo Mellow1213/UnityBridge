@@ -82,7 +82,7 @@ Keep the Unity project open, then run:
 ```powershell
 unity-bridge status
 unity-bridge instances
-unity-bridge call list
+unity-bridge tools
 ```
 
 ## Version Pinning
@@ -100,7 +100,7 @@ Installed command:
 ```powershell
 unity-bridge status
 unity-bridge instances
-unity-bridge call list
+unity-bridge tools
 ```
 
 The same CLI is also available as `unity_bridge`.
@@ -109,7 +109,7 @@ Add `--json` when another program or agent should parse the output:
 
 ```powershell
 unity-bridge --json instances
-unity-bridge --json call list
+unity-bridge --json console --count 20
 ```
 
 Module form without installing:
@@ -118,12 +118,41 @@ Module form without installing:
 $env:PYTHONPATH='D:\Code\Codex\CP\UnityBridge\src'
 python -m unity_bridge status
 python -m unity_bridge instances
-python -m unity_bridge call list
+python -m unity_bridge tools
 ```
 
 ## Command Examples
 
-UnityBridge sends the Unity Connector command name directly.
+Most workflows can use the short adapter commands:
+
+```powershell
+# Enter play mode and wait until Unity confirms it.
+unity-bridge editor play --wait
+
+# Stop play mode.
+unity-bridge editor stop
+
+# Refresh assets.
+unity-bridge refresh
+
+# Read console logs.
+unity-bridge console --count 20 --type error --type warning --type log
+
+# Clear console logs.
+unity-bridge console --clear
+
+# Run EditMode tests.
+unity-bridge test --mode EditMode
+
+# Execute a Unity menu item.
+unity-bridge menu "File/Save Project"
+
+# Execute arbitrary C# code through the connector.
+unity-bridge exec --code "return UnityEditor.EditorApplication.isPlaying;"
+```
+
+Raw connector access is still available through `call`. In that mode,
+UnityBridge sends the Unity Connector command name and params directly.
 
 ```powershell
 # Enter play mode and wait until Unity confirms it.
@@ -136,12 +165,12 @@ unity-bridge call manage_editor --params '{"action":"stop"}'
 unity-bridge call refresh_unity --params '{}'
 
 # Read console logs.
-unity-bridge call console --params '{"count":20,"types":["error","warning","log"]}'
+unity-bridge call console --params '{"count":20,"type":"error,warning,log"}'
 
 # Run EditMode tests.
 unity-bridge call run_tests --params '{"mode":"EditMode"}'
 
-# Execute a safe Unity menu item.
+# Execute a Unity menu item.
 unity-bridge call menu --params '{"menu_path":"File/Save Project"}'
 ```
 
@@ -150,10 +179,24 @@ Select a specific Unity Editor instance:
 ```powershell
 unity-bridge --project D:\UnityProjects\MyGame status
 unity-bridge --port 8090 status
-unity-bridge --project D:\UnityProjects\MyGame call console --params '{"count":20}'
+unity-bridge --project D:\UnityProjects\MyGame console --count 20 --type error
 ```
 
 ## Python examples
+
+```python
+from unity_bridge import UnityBridgeAdapter
+
+bridge = UnityBridgeAdapter(project=r"D:\UnityProjects\MyGame")
+
+bridge.refresh_assets()
+logs = bridge.read_console(count=50, types=["error", "warning", "log"])
+tests = bridge.run_tests(mode="EditMode")
+```
+
+The adapter is intentionally thin. It maps friendly Python methods to connector
+commands, but it does not add an allowlist or denylist policy layer. Raw access
+is available through `UnityClient` when you need exact connector params:
 
 ```python
 from unity_bridge import UnityClient
@@ -162,7 +205,7 @@ client = UnityClient(project=r"D:\UnityProjects\MyGame")
 status = client.status()
 print(status.state, status.port)
 
-result = client.call("list")
+result = client.call("console", {"count": 20, "type": "error,warning"})
 print(result.success, result.message, result.data)
 ```
 

@@ -1,3 +1,5 @@
+from .adapter import UnityActionResult
+from .adapter import UnityBridgeAdapter
 from .client import CommandResponse
 from .client import DiscoveryError
 from .client import Instance
@@ -15,6 +17,8 @@ __all__ = [
     "CommandResponse",
     "DiscoveryError",
     "Instance",
+    "UnityActionResult",
+    "UnityBridgeAdapter",
     "UnityClient",
     "UnityBridgeError",
     "UnityConnectionError",

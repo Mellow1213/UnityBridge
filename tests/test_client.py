@@ -4,8 +4,10 @@ import json
 import sys
 import threading
 import unittest
+from contextlib import redirect_stdout
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from urllib.parse import urlparse
@@ -16,12 +18,15 @@ sys.path.insert(0, str(ROOT / "src"))
 from unity_bridge import CommandResponse
 from unity_bridge import DiscoveryError
 from unity_bridge import Instance
+from unity_bridge import UnityActionResult
+from unity_bridge import UnityBridgeAdapter
 from unity_bridge import UnityClient
 from unity_bridge import discover_instance
 from unity_bridge import find_active_by_port
 from unity_bridge import find_by_port
 from unity_bridge import scan_instances
 from unity_bridge import send_command
+from unity_bridge.cli import main as cli_main
 from unity_bridge.client import default_instances_dir
 
 
@@ -211,6 +216,121 @@ class HttpClientTests(unittest.TestCase):
             response = client.call("status")
 
             self.assertEqual(response, CommandResponse(success=True, message="ok"))
+
+
+class AdapterTests(unittest.TestCase):
+    def test_adapter_console_uses_connector_console_params(self) -> None:
+        response_body = json.dumps({"success": True, "message": "Retrieved 0 entries.", "data": []}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port)
+            adapter = UnityBridgeAdapter(instances_dir=directory, process_checker=lambda pid: False)
+
+            result = adapter.read_console(count=20, types=["error", "warning"], stacktrace="none")
+
+            self.assertEqual(
+                result,
+                UnityActionResult(
+                    tool="console",
+                    command="console",
+                    params={"count": 20, "type": "error,warning", "stacktrace": "none"},
+                    success=True,
+                    message="Retrieved 0 entries.",
+                    data=[],
+                ),
+            )
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "console",
+                    "params": {"count": 20, "type": "error,warning", "stacktrace": "none"},
+                },
+            )
+
+    def test_adapter_editor_play_maps_to_manage_editor(self) -> None:
+        response_body = json.dumps({"success": True, "message": "Entered play mode (confirmed)."}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port)
+            adapter = UnityBridgeAdapter(instances_dir=directory, process_checker=lambda pid: False)
+
+            result = adapter.editor_play(wait=True)
+
+            self.assertTrue(result.success)
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "manage_editor",
+                    "params": {"action": "play", "wait_for_completion": True},
+                },
+            )
+
+    def test_adapter_menu_sends_raw_menu_path(self) -> None:
+        response_body = json.dumps({"success": True, "message": "Executed menu item."}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port)
+            adapter = UnityBridgeAdapter(instances_dir=directory, process_checker=lambda pid: False)
+
+            adapter.execute_menu_item("File/Save Project")
+
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "menu",
+                    "params": {"menu_path": "File/Save Project"},
+                },
+            )
+
+    def test_adapter_exec_csharp_has_no_policy_gate(self) -> None:
+        response_body = json.dumps({"success": True, "message": "ok", "data": 3}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port)
+            adapter = UnityBridgeAdapter(instances_dir=directory, process_checker=lambda pid: False)
+
+            result = adapter.exec_csharp("return 1 + 2;", usings=["UnityEditor"])
+
+            self.assertEqual(result.data, 3)
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "exec",
+                    "params": {"code": "return 1 + 2;", "usings": ["UnityEditor"]},
+                },
+            )
+
+
+class CliTests(unittest.TestCase):
+    def test_cli_console_command_sends_adapter_request(self) -> None:
+        response_body = json.dumps({"success": True, "message": "Retrieved 0 entries.", "data": []}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port, pid=0)
+
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                exit_code = cli_main(
+                    [
+                        "--instances-dir",
+                        str(directory),
+                        "console",
+                        "--count",
+                        "5",
+                        "--type",
+                        "error",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("Retrieved 0 entries.", stdout.getvalue())
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "console",
+                    "params": {"count": 5, "type": "error", "stacktrace": "user"},
+                },
+            )
 
 
 if __name__ == "__main__":

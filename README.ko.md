@@ -80,7 +80,7 @@ Unity 프로젝트를 열어둔 상태에서 실행합니다.
 ```powershell
 unity-bridge status
 unity-bridge instances
-unity-bridge call list
+unity-bridge tools
 ```
 
 ## 버전 고정
@@ -98,7 +98,7 @@ https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector#v0.1.0
 ```powershell
 unity-bridge status
 unity-bridge instances
-unity-bridge call list
+unity-bridge tools
 ```
 
 같은 CLI를 `unity_bridge` 명령어로도 사용할 수 있습니다.
@@ -107,7 +107,7 @@ unity-bridge call list
 
 ```powershell
 unity-bridge --json instances
-unity-bridge --json call list
+unity-bridge --json console --count 20
 ```
 
 설치하지 않고 모듈 경로로 실행:
@@ -116,12 +116,41 @@ unity-bridge --json call list
 $env:PYTHONPATH='D:\Code\Codex\CP\UnityBridge\src'
 python -m unity_bridge status
 python -m unity_bridge instances
-python -m unity_bridge call list
+python -m unity_bridge tools
 ```
 
 ## 명령 예시
 
-UnityBridge는 Unity Connector의 command 이름을 그대로 보냅니다.
+대부분의 작업은 짧은 adapter 명령으로 실행할 수 있습니다.
+
+```powershell
+# Play Mode 진입 후 Unity 확인까지 대기
+unity-bridge editor play --wait
+
+# Play Mode 종료
+unity-bridge editor stop
+
+# 에셋 새로고침
+unity-bridge refresh
+
+# 콘솔 로그 읽기
+unity-bridge console --count 20 --type error --type warning --type log
+
+# 콘솔 로그 지우기
+unity-bridge console --clear
+
+# EditMode 테스트 실행
+unity-bridge test --mode EditMode
+
+# Unity 메뉴 실행
+unity-bridge menu "File/Save Project"
+
+# connector를 통해 임의 C# 코드 실행
+unity-bridge exec --code "return UnityEditor.EditorApplication.isPlaying;"
+```
+
+낮은 수준의 connector 접근이 필요하면 `call`을 그대로 사용할 수 있습니다. 이 모드에서는
+UnityBridge가 Unity Connector의 command 이름과 params를 직접 보냅니다.
 
 ```powershell
 # Play Mode 진입 후 Unity 확인까지 대기
@@ -134,12 +163,12 @@ unity-bridge call manage_editor --params '{"action":"stop"}'
 unity-bridge call refresh_unity --params '{}'
 
 # 콘솔 로그 읽기
-unity-bridge call console --params '{"count":20,"types":["error","warning","log"]}'
+unity-bridge call console --params '{"count":20,"type":"error,warning,log"}'
 
 # EditMode 테스트 실행
 unity-bridge call run_tests --params '{"mode":"EditMode"}'
 
-# 안전한 Unity 메뉴 실행
+# Unity 메뉴 실행
 unity-bridge call menu --params '{"menu_path":"File/Save Project"}'
 ```
 
@@ -148,10 +177,24 @@ unity-bridge call menu --params '{"menu_path":"File/Save Project"}'
 ```powershell
 unity-bridge --project D:\UnityProjects\MyGame status
 unity-bridge --port 8090 status
-unity-bridge --project D:\UnityProjects\MyGame call console --params '{"count":20}'
+unity-bridge --project D:\UnityProjects\MyGame console --count 20 --type error
 ```
 
 ## Python 사용 예시
+
+```python
+from unity_bridge import UnityBridgeAdapter
+
+bridge = UnityBridgeAdapter(project=r"D:\UnityProjects\MyGame")
+
+bridge.refresh_assets()
+logs = bridge.read_console(count=50, types=["error", "warning", "log"])
+tests = bridge.run_tests(mode="EditMode")
+```
+
+adapter는 의도적으로 얇은 계층입니다. 쓰기 쉬운 Python 메서드를 connector command로 매핑하지만,
+allowlist나 denylist 같은 정책 계층은 추가하지 않습니다. connector params를 정확히 지정해야 하면
+`UnityClient`로 raw 호출을 사용할 수 있습니다.
 
 ```python
 from unity_bridge import UnityClient
@@ -160,7 +203,7 @@ client = UnityClient(project=r"D:\UnityProjects\MyGame")
 status = client.status()
 print(status.state, status.port)
 
-result = client.call("list")
+result = client.call("console", {"count": 20, "type": "error,warning"})
 print(result.success, result.message, result.data)
 ```
 

@@ -121,6 +121,121 @@ python -m unity_bridge instances
 python -m unity_bridge tools
 ```
 
+## Available Commands
+
+Common options can be placed before or after the subcommand.
+
+```powershell
+unity-bridge --project D:\UnityProjects\MyGame status
+unity-bridge status --project D:\UnityProjects\MyGame
+unity-bridge --port 8090 console --count 20
+unity-bridge --json console --count 20
+```
+
+| Command | Purpose |
+|---------|---------|
+| `unity-bridge instances` | Print discovered Unity Editor instances. |
+| `unity-bridge status` | Print the selected Unity Editor instance status. |
+| `unity-bridge tools` | Print Unity Connector tools and parameter schemas. |
+| `unity-bridge refresh` | Refresh Unity assets. |
+| `unity-bridge console` | Read or clear Unity Console logs. |
+| `unity-bridge test` | Run Unity EditMode or PlayMode tests. |
+| `unity-bridge editor` | Enter, stop, or pause Play Mode. |
+| `unity-bridge menu` | Execute a Unity menu item by path. |
+| `unity-bridge reserialize` | Force reserialize Unity assets. |
+| `unity-bridge profiler` | Run Unity Profiler status, enable, disable, clear, or hierarchy calls. |
+| `unity-bridge screenshot` | Save a Scene/Game view screenshot. |
+| `unity-bridge exec` | Execute arbitrary C# code inside the Unity Editor. |
+| `unity-bridge call` | Send a raw connector command name and JSON params. |
+| `unity-bridge wait-ready` | Wait until Unity reaches the ready state. |
+
+### Common Options
+
+| Option | Description |
+|--------|-------------|
+| `--project PATH_OR_TEXT` | Select a Unity instance by project path substring. |
+| `--port PORT` | Select a Unity instance by port. |
+| `--timeout-ms MS` | HTTP request timeout. Default: `120000`. |
+| `--instances-dir PATH` | Use a heartbeat directory other than `~/.unity-bridge/instances`. |
+| `--json` | Print JSON output for agents or other programs. |
+
+### Command Usage
+
+```powershell
+# Unity instances
+unity-bridge instances
+unity-bridge status
+unity-bridge tools
+unity-bridge wait-ready --timeout-sec 300
+
+# Asset refresh
+unity-bridge refresh
+unity-bridge refresh --mode force
+unity-bridge refresh --force
+unity-bridge refresh --compile request
+
+# Console logs
+unity-bridge console
+unity-bridge console --count 20
+unity-bridge console --type error --type warning
+unity-bridge console --stacktrace none
+unity-bridge console --stacktrace full
+unity-bridge console --clear
+
+# Editor control
+unity-bridge editor play
+unity-bridge editor play --wait
+unity-bridge editor stop
+unity-bridge editor stop --wait
+unity-bridge editor pause
+
+# Tests
+unity-bridge test
+unity-bridge test --mode EditMode
+unity-bridge test --mode PlayMode
+unity-bridge test --filter MyTestClass
+unity-bridge test --allow-dirty-scenes
+unity-bridge test --auto-save-scenes
+
+# Unity menu
+unity-bridge menu "File/Save Project"
+unity-bridge menu "Assets/Refresh"
+unity-bridge menu "Window/General/Console"
+
+# Asset reserialization
+unity-bridge reserialize
+unity-bridge reserialize Assets/Prefabs/Player.prefab
+unity-bridge reserialize Assets/Scenes/Main.unity Assets/Scenes/Lobby.unity
+
+# Profiler
+unity-bridge profiler status
+unity-bridge profiler enable
+unity-bridge profiler disable
+unity-bridge profiler clear
+unity-bridge profiler hierarchy
+
+# Screenshots
+unity-bridge screenshot
+unity-bridge screenshot --view scene --output-path Screenshots/scene.png
+unity-bridge screenshot --view game --width 1280 --height 720
+
+# C# execution
+unity-bridge exec --code "return UnityEditor.EditorApplication.isPlaying;"
+unity-bridge exec --code "return UnityEngine.Application.dataPath;"
+unity-bridge exec --code-file .\query.cs
+unity-bridge exec --code "return Unity.Entities.World.All.Count;" --using Unity.Entities
+
+# Raw connector command calls
+unity-bridge call list
+unity-bridge call console --params '{"count":20,"type":"error,warning"}'
+unity-bridge call manage_editor --params '{"action":"play","wait_for_completion":true}'
+unity-bridge call my_custom_tool --params '{"key":"value"}'
+```
+
+Detailed `profiler hierarchy` parameters such as `depth`, `root`, and `frames`,
+and arbitrary custom tool parameters, are not all exposed as short CLI flags yet.
+Use `unity-bridge call <command> --params '{...}'` for those cases.
+
 ## Command Examples
 
 Most workflows can use the short adapter commands:

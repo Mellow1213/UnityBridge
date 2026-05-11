@@ -12,9 +12,6 @@ connector와 직접 통신합니다.
 2. 포트, 정확한 프로젝트 경로, 경로 suffix, 현재 작업 경로, 최신 heartbeat를 기준으로 실행 중인 Unity Editor를 선택합니다.
 3. `http://127.0.0.1:{port}/command`로 JSON 요청을 보냅니다.
 
-이 저장소는 `D:\Code\Codex\Agent`와 분리된 독립 프로젝트입니다. Agent에 통합하기 전에
-별도로 테스트하고 발전시킬 수 있게 구성했습니다.
-
 ## 빠른 시작
 
 ### 1. Unity 패키지 설치

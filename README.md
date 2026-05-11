@@ -13,9 +13,6 @@ the Unity connector by:
    current working directory, or most recent heartbeat.
 3. Sending JSON to `http://127.0.0.1:{port}/command`.
 
-It is intentionally separate from `D:\Code\Codex\Agent` so it can be tested
-and evolved before integration.
-
 ## Quick Start
 
 ### 1. Install the Unity package

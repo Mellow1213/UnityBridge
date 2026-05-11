@@ -32,6 +32,10 @@ unity-bridge --json console --count 20
 | `--instances-dir PATH` | 기본 `~/.unity-bridge/instances` 대신 다른 heartbeat 폴더를 사용합니다. |
 | `--json` | 결과를 JSON으로 출력합니다. 에이전트가 파싱할 때 사용합니다. |
 
+`--project`는 정확한 프로젝트 경로, 현재 경로가 프로젝트 내부인지 여부, 프로젝트 폴더 이름을
+먼저 확인합니다. 마지막 fallback으로 부분 문자열 검색을 사용하며, 여러 Unity 인스턴스가 동시에
+매칭되면 임의 선택하지 않고 에러를 반환합니다.
+
 ## 명령어 목록
 
 | 명령어 | 용도 |

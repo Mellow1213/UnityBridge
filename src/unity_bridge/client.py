@@ -270,21 +270,44 @@ def discover_instance(
     if not alive:
         raise DiscoveryError("no Unity instances running")
 
-    project_filter = _slash_path(project) if project else ""
+    project_filter = _path_key(project) if project else ""
     if project_filter:
-        for instance in alive:
-            if project_filter in _slash_path(instance.project_path):
-                return instance
+        exact = [instance for instance in alive if _path_key(instance.project_path) == project_filter]
+        if exact:
+            return _most_recent(exact)
+
+        containing = [
+            instance
+            for instance in alive
+            if _is_same_or_child(project_filter, _path_key(instance.project_path))
+        ]
+        if containing:
+            return _most_specific(containing)
+
+        named = [instance for instance in alive if _path_name(instance.project_path) == project_filter]
+        if named:
+            return _most_recent(named)
+
+        substring = [instance for instance in alive if project_filter in _path_key(instance.project_path)]
+        if len(substring) == 1:
+            return substring[0]
+        if len(substring) > 1:
+            raise DiscoveryError(
+                f"multiple Unity instances match project '{project}': {_format_instance_matches(substring)}"
+            )
         raise DiscoveryError(f"no Unity instance found for project: {project}")
 
     cwd_path = Path(cwd) if cwd is not None else Path.cwd()
-    cwd_norm = _slash_path(cwd_path)
-    for instance in alive:
-        project_norm = _slash_path(instance.project_path)
-        if cwd_norm == project_norm or cwd_norm.startswith(project_norm + "/"):
-            return instance
+    cwd_norm = _path_key(cwd_path)
+    cwd_matches = [
+        instance
+        for instance in alive
+        if _is_same_or_child(cwd_norm, _path_key(instance.project_path))
+    ]
+    if cwd_matches:
+        return _most_specific(cwd_matches)
 
-    return max(alive, key=lambda instance: instance.timestamp)
+    return _most_recent(alive)
 
 
 def send_command(
@@ -414,3 +437,29 @@ def _is_windows_process_dead(pid: int) -> bool:
 
 def _slash_path(value: str | Path) -> str:
     return str(value).replace("\\", "/").rstrip("/")
+
+
+def _path_key(value: str | Path) -> str:
+    path = _slash_path(value)
+    return path.casefold() if os.name == "nt" else path
+
+
+def _path_name(value: str | Path) -> str:
+    path = _path_key(value)
+    return path.rsplit("/", 1)[-1]
+
+
+def _is_same_or_child(path: str, parent: str) -> bool:
+    return path == parent or path.startswith(parent + "/")
+
+
+def _most_recent(instances: list[Instance]) -> Instance:
+    return max(instances, key=lambda instance: instance.timestamp)
+
+
+def _most_specific(instances: list[Instance]) -> Instance:
+    return max(instances, key=lambda instance: (len(_path_key(instance.project_path)), instance.timestamp))
+
+
+def _format_instance_matches(instances: list[Instance]) -> str:
+    return ", ".join(f"{instance.project_path} (port {instance.port})" for instance in instances)

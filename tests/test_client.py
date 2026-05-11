@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import threading
 import unittest
@@ -158,6 +159,62 @@ class DiscoveryTests(unittest.TestCase):
             self.assertEqual(by_project.port, 8090)
             self.assertEqual(by_cwd.port, 8090)
             self.assertEqual(by_recent.port, 8091)
+
+    def test_discover_instance_prefers_project_name_before_substring(self) -> None:
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            write_instance(directory, "game", projectPath="D:/UnityProjects/Game", port=8090, timestamp=10)
+            write_instance(directory, "prototype", projectPath="D:/UnityProjects/GamePrototype", port=8091, timestamp=20)
+
+            instance = discover_instance(
+                project="Game",
+                instances_dir=directory,
+                process_checker=lambda pid: False,
+            )
+
+            self.assertEqual(instance.port, 8090)
+
+    def test_discover_instance_reports_ambiguous_project_substring(self) -> None:
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            write_instance(directory, "game", projectPath="D:/UnityProjects/Game", port=8090, timestamp=10)
+            write_instance(directory, "tool", projectPath="D:/UnityProjects/Tool", port=8091, timestamp=20)
+
+            with self.assertRaises(DiscoveryError):
+                discover_instance(
+                    project="UnityProjects",
+                    instances_dir=directory,
+                    process_checker=lambda pid: False,
+                )
+
+    def test_discover_instance_uses_case_insensitive_project_match_on_windows(self) -> None:
+        if os.name != "nt":
+            self.skipTest("Windows-only path case behavior")
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            write_instance(directory, "game", projectPath="D:/UnityProjects/Game", port=8090, timestamp=10)
+
+            instance = discover_instance(
+                project="d:/unityprojects/game",
+                instances_dir=directory,
+                process_checker=lambda pid: False,
+            )
+
+            self.assertEqual(instance.port, 8090)
+
+    def test_discover_instance_picks_most_specific_cwd_match(self) -> None:
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            write_instance(directory, "root", projectPath="D:/UnityProjects/Game", port=8090, timestamp=20)
+            write_instance(directory, "nested", projectPath="D:/UnityProjects/Game/Nested", port=8091, timestamp=10)
+
+            instance = discover_instance(
+                instances_dir=directory,
+                cwd="D:/UnityProjects/Game/Nested/Assets/Scripts",
+                process_checker=lambda pid: False,
+            )
+
+            self.assertEqual(instance.port, 8091)
 
     def test_discover_instance_reports_missing_connector_directory(self) -> None:
         with TemporaryDirectory() as tmp:

@@ -32,6 +32,11 @@ unity-bridge --json console --count 20
 | `--instances-dir PATH` | Use a heartbeat directory other than `~/.unity-bridge/instances`. |
 | `--json` | Print JSON output for agents or other programs. |
 
+`--project` checks exact project paths, whether the supplied path is inside a
+project, and project folder names before falling back to substring search. If a
+substring matches multiple Unity instances, UnityBridge returns an error instead
+of choosing one arbitrarily.
+
 ## Command List
 
 | Command | Purpose |

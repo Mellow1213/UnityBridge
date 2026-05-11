@@ -72,10 +72,17 @@ unity-bridge wait-ready --timeout-sec 300
 
 ```powershell
 unity-bridge refresh
+unity-bridge refresh --path Assets/Scripts/Player.cs
+unity-bridge refresh --path Assets/Scripts/Player.cs --path Assets/Prefabs/Enemy.prefab
 unity-bridge refresh --mode force
 unity-bridge refresh --force
 unity-bridge refresh --compile request
 ```
+
+`--path`가 없으면 프로젝트 전체에 `AssetDatabase.Refresh()`를 실행합니다. 하나 이상의
+`--path`를 넘기면 해당 경로들을 `AssetDatabase.ImportAsset()`으로 가져옵니다. 경로는
+`Assets/...`, `Packages/...`, 또는 Unity 프로젝트 내부의 절대 경로를 사용할 수 있으며,
+절대 경로는 import 전에 Unity asset path로 정규화됩니다.
 
 ### 콘솔 로그
 

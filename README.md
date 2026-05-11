@@ -129,9 +129,14 @@ from unity_bridge import UnityBridgeAdapter
 bridge = UnityBridgeAdapter(project=r"D:\UnityProjects\MyGame")
 
 bridge.refresh_assets()
+bridge.refresh_assets(paths=[r"D:\UnityProjects\MyGame\Assets\Scripts\Player.cs"])
 logs = bridge.read_console(count=50, types=["error", "warning", "log"])
 tests = bridge.run_tests(mode="EditMode")
 ```
+
+`refresh_assets()` without paths runs a full Unity asset refresh. Passing
+`paths` imports only those asset paths; absolute paths inside the Unity project
+are normalized by the connector.
 
 The adapter is intentionally thin. It maps friendly Python methods to connector
 commands, but it does not add an allowlist or denylist policy layer. Raw access

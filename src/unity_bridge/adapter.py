@@ -102,7 +102,7 @@ class UnityBridgeAdapter:
         *,
         mode: str = "if_dirty",
         force: bool = False,
-        scope: str = "all",
+        paths: str | Path | Iterable[str | Path] | None = None,
         compile: str = "none",
     ) -> UnityActionResult:
         return self._call(
@@ -111,7 +111,7 @@ class UnityBridgeAdapter:
             {
                 "mode": mode,
                 "force": force,
-                "scope": scope,
+                "paths": _path_list(paths),
                 "compile": compile,
             },
         )
@@ -338,4 +338,12 @@ def _list_or_csv(value: str | Iterable[str] | None) -> list[str] | None:
         return None
     if isinstance(value, str):
         return [item.strip() for item in value.split(",") if item.strip()]
+    return [str(item) for item in value]
+
+
+def _path_list(value: str | Path | Iterable[str | Path] | None) -> list[str] | None:
+    if value is None:
+        return None
+    if isinstance(value, (str, Path)):
+        return [str(value)]
     return [str(item) for item in value]

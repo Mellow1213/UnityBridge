@@ -79,7 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
     refresh = sub.add_parser("refresh", parents=[parent], help="Refresh Unity assets.")
     refresh.add_argument("--mode", default="if_dirty", choices=["if_dirty", "force"], help="Refresh mode.")
     refresh.add_argument("--force", action="store_true", help="Allow refresh while entering or in play mode.")
-    refresh.add_argument("--scope", default="all", help="Refresh scope.")
+    refresh.add_argument("--path", dest="paths", action="append", help="Asset path to import. Repeatable. Accepts Assets/..., Packages/..., or an absolute project path.")
     refresh.add_argument("--compile", default="none", choices=["none", "request"], help="Request script compilation.")
 
     console = sub.add_parser("console", parents=[parent], help="Read or clear Unity console logs.")
@@ -171,7 +171,7 @@ def main(argv: list[str] | None = None) -> int:
             response = adapter.refresh_assets(
                 mode=args.mode,
                 force=args.force,
-                scope=args.scope,
+                paths=args.paths,
                 compile=args.compile,
             )
             _print(response, json_output=args.json)

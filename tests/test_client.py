@@ -312,6 +312,40 @@ class HttpClientTests(unittest.TestCase):
 
 
 class AdapterTests(unittest.TestCase):
+    def test_adapter_refresh_assets_sends_paths_payload(self) -> None:
+        response_body = json.dumps(
+            {
+                "success": True,
+                "message": "Refresh requested.",
+                "data": {
+                    "refresh_triggered": True,
+                    "scope": "paths",
+                    "paths": ["Assets/Scripts/Player.cs"],
+                },
+            }
+        ).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port)
+            adapter = UnityBridgeAdapter(instances_dir=directory, process_checker=lambda pid: False)
+
+            result = adapter.refresh_assets(paths=[r"D:\Game\Assets\Scripts\Player.cs"])
+
+            self.assertTrue(result.success)
+            self.assertEqual(result.data["scope"], "paths")
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "refresh_unity",
+                    "params": {
+                        "mode": "if_dirty",
+                        "force": False,
+                        "paths": [r"D:\Game\Assets\Scripts\Player.cs"],
+                        "compile": "none",
+                    },
+                },
+            )
+
     def test_adapter_console_uses_connector_console_params(self) -> None:
         response_body = json.dumps({"success": True, "message": "Retrieved 0 entries.", "data": []}).encode("utf-8")
         with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
@@ -562,6 +596,41 @@ class CliTests(unittest.TestCase):
                 {
                     "command": "console",
                     "params": {"count": 5, "type": "error", "stacktrace": "user"},
+                },
+            )
+
+    def test_cli_refresh_accepts_repeated_path_flags(self) -> None:
+        response_body = json.dumps({"success": True, "message": "Refresh requested."}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port, pid=0)
+
+            with redirect_stdout(StringIO()):
+                exit_code = cli_main(
+                    [
+                        "--instances-dir",
+                        str(directory),
+                        "refresh",
+                        "--path",
+                        "Assets/Scripts/Player.cs",
+                        "--path",
+                        r"D:\Game\Assets\Prefabs\Enemy.prefab",
+                        "--compile",
+                        "request",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "refresh_unity",
+                    "params": {
+                        "mode": "if_dirty",
+                        "force": False,
+                        "paths": ["Assets/Scripts/Player.cs", r"D:\Game\Assets\Prefabs\Enemy.prefab"],
+                        "compile": "request",
+                    },
                 },
             )
 

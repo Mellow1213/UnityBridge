@@ -74,10 +74,18 @@ unity-bridge wait-ready --timeout-sec 300
 
 ```powershell
 unity-bridge refresh
+unity-bridge refresh --path Assets/Scripts/Player.cs
+unity-bridge refresh --path Assets/Scripts/Player.cs --path Assets/Prefabs/Enemy.prefab
 unity-bridge refresh --mode force
 unity-bridge refresh --force
 unity-bridge refresh --compile request
 ```
+
+Without `--path`, refresh runs `AssetDatabase.Refresh()` for the project. With
+one or more `--path` values, UnityBridge sends those paths to
+`AssetDatabase.ImportAsset()`. Paths can be `Assets/...`, `Packages/...`, or
+absolute paths inside the Unity project; absolute project paths are normalized
+to Unity asset paths before import.
 
 ### Console Logs
 

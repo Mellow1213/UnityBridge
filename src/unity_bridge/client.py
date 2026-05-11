@@ -261,10 +261,7 @@ def discover_instance(
     directory = Path(instances_dir) if instances_dir is not None else default_instances_dir()
     instances = scan_instances(instances_dir=directory, process_checker=process_checker)
     if not instances:
-        raise DiscoveryError(
-            "no Unity instances found. Is Unity running with the Connector package? "
-            f"Expected: {directory}"
-        )
+        raise DiscoveryError("no Unity instances found. Is Unity running with the Connector package?")
 
     alive = [instance for instance in instances if instance.is_active]
     if not alive:

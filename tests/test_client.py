@@ -220,8 +220,13 @@ class DiscoveryTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             missing = Path(tmp) / "instances"
 
-            with self.assertRaises(DiscoveryError):
+            with self.assertRaises(DiscoveryError) as cm:
                 discover_instance(instances_dir=missing)
+            self.assertEqual(
+                str(cm.exception),
+                "no Unity instances found. Is Unity running with the Connector package?",
+            )
+            self.assertNotIn(str(missing), str(cm.exception))
 
 
 class HttpClientTests(unittest.TestCase):

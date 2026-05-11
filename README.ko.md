@@ -50,15 +50,11 @@ Edit > Preferences > General > Interaction Mode > No Throttling
 python -m pip install --upgrade "git+https://github.com/zjxps2007/UnityBridge.git"
 ```
 
-저장소가 public이면 PowerShell 설치 스크립트를 바로 실행할 수도 있습니다.
+PowerShell 설치 스크립트를 바로 실행할 수도 있습니다.
 
 ```powershell
 irm https://raw.githubusercontent.com/zjxps2007/UnityBridge/main/install.ps1 | iex
 ```
-
-private 저장소에서는 `raw.githubusercontent.com`이 인증 없이 접근되지 않아 `404`가 날 수
-있습니다. 이 경우 위의 `pip install` 명령을 쓰거나 저장소를 clone한 뒤 `.\install.cmd`를
-실행하세요.
 
 ```powershell
 git clone https://github.com/zjxps2007/UnityBridge.git

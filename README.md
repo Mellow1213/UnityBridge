@@ -51,15 +51,11 @@ but `No Throttling` is still recommended for the most stable response times.
 python -m pip install --upgrade "git+https://github.com/zjxps2007/UnityBridge.git"
 ```
 
-If this repository is public, the PowerShell installer can also be run directly:
+The PowerShell installer can also be run directly:
 
 ```powershell
 irm https://raw.githubusercontent.com/zjxps2007/UnityBridge/main/install.ps1 | iex
 ```
-
-For private repositories, `raw.githubusercontent.com` requires authentication and
-may return `404`. In that case, use the `pip install` command above or clone the
-repository and run `.\install.cmd`.
 
 ```powershell
 git clone https://github.com/zjxps2007/UnityBridge.git

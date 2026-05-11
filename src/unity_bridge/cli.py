@@ -81,6 +81,9 @@ def build_parser() -> argparse.ArgumentParser:
     refresh.add_argument("--force", action="store_true", help="Allow refresh while entering or in play mode.")
     refresh.add_argument("--path", dest="paths", action="append", help="Asset path to import. Repeatable. Accepts Assets/..., Packages/..., or an absolute project path.")
     refresh.add_argument("--compile", default="none", choices=["none", "request"], help="Request script compilation.")
+    refresh.add_argument("--wait", action="store_true", help="Wait until Unity reaches stable ready after refresh.")
+    refresh.add_argument("--timeout-sec", type=int, default=300, help="Ready wait timeout in seconds.")
+    refresh.add_argument("--stable-sec", type=float, default=0.5, help="Required stable ready duration when --wait is used.")
 
     console = sub.add_parser("console", parents=[parent], help="Read or clear Unity console logs.")
     console.add_argument("--count", type=int, default=50, help="Maximum number of entries to return.")
@@ -173,6 +176,9 @@ def main(argv: list[str] | None = None) -> int:
                 force=args.force,
                 paths=args.paths,
                 compile=args.compile,
+                wait=args.wait,
+                timeout_sec=args.timeout_sec,
+                stable_sec=args.stable_sec,
             )
             _print(response, json_output=args.json)
             return 0 if response.success else 1

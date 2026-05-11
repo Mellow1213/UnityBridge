@@ -76,6 +76,7 @@ unity-bridge wait-ready --timeout-sec 300
 unity-bridge refresh
 unity-bridge refresh --path Assets/Scripts/Player.cs
 unity-bridge refresh --path Assets/Scripts/Player.cs --path Assets/Prefabs/Enemy.prefab
+unity-bridge refresh --path Assets/Scripts/Player.cs --wait
 unity-bridge refresh --mode force
 unity-bridge refresh --force
 unity-bridge refresh --compile request
@@ -86,6 +87,10 @@ one or more `--path` values, UnityBridge sends those paths to
 `AssetDatabase.ImportAsset()`. Paths can be `Assets/...`, `Packages/...`, or
 absolute paths inside the Unity project; absolute project paths are normalized
 to Unity asset paths before import.
+
+Use `--wait` when an agent needs to continue only after Unity has observed the
+refresh/import and returned to a stable `ready` heartbeat. This avoids racing a
+compile or domain reload that starts just after the refresh command returns.
 
 ### Console Logs
 

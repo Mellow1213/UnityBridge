@@ -8,12 +8,15 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .client import DEFAULT_TIMEOUT_MS
+from .client import DEFAULT_READY_TIMEOUT_SEC
+from .client import DEFAULT_POLL_INTERVAL_SEC
 from .client import CommandResponse
 from .client import DiscoveryError
 from .client import Instance
 from .client import ProcessDeadChecker
 from .client import UnityClient
 from .client import find_by_port
+from .client import wait_for_ready
 
 
 DEFAULT_TEST_TIMEOUT_SEC = 600
@@ -104,17 +107,42 @@ class UnityBridgeAdapter:
         force: bool = False,
         paths: str | Path | Iterable[str | Path] | None = None,
         compile: str = "none",
+        wait: bool = False,
+        timeout_sec: int = DEFAULT_READY_TIMEOUT_SEC,
+        stable_sec: float = 0.5,
+        poll_interval_sec: float = DEFAULT_POLL_INTERVAL_SEC,
     ) -> UnityActionResult:
-        return self._call(
-            "refresh",
-            "refresh_unity",
+        payload = _compact(
             {
                 "mode": mode,
                 "force": force,
                 "paths": _path_list(paths),
                 "compile": compile,
-            },
+            }
         )
+        target = self.client.discover_instance()
+        response = self.client.call("refresh_unity", payload, instance=target)
+        result = UnityActionResult.from_response(
+            tool="refresh",
+            command="refresh_unity",
+            params=payload,
+            response=response,
+        )
+        if not wait or not response.success:
+            return result
+
+        ready = wait_for_ready(
+            lambda: find_by_port(
+                target.port,
+                instances_dir=self.client.instances_dir,
+                process_checker=self.client.process_checker,
+            ),
+            timeout_sec=timeout_sec,
+            poll_interval_sec=poll_interval_sec,
+            after_timestamp=target.timestamp,
+            stable_sec=stable_sec,
+        )
+        return _with_data(result, {"ready": ready.to_dict()})
 
     def read_console(
         self,
@@ -271,6 +299,25 @@ class UnityBridgeAdapter:
 
 def _compact(params: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in params.items() if value is not None}
+
+
+def _with_data(result: UnityActionResult, extra: dict[str, Any]) -> UnityActionResult:
+    data: dict[str, Any]
+    if isinstance(result.data, dict):
+        data = dict(result.data)
+    elif result.data is None:
+        data = {}
+    else:
+        data = {"result": result.data}
+    data.update(extra)
+    return UnityActionResult(
+        tool=result.tool,
+        command=result.command,
+        params=result.params,
+        success=result.success,
+        message=result.message,
+        data=data,
+    )
 
 
 def _is_unknown_command_response(response: CommandResponse, command: str) -> bool:

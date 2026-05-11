@@ -170,8 +170,19 @@ class UnityClient:
             timeout_ms=timeout_ms or self.timeout_ms,
         )
 
-    def wait_for_ready(self, *, timeout_sec: int = DEFAULT_READY_TIMEOUT_SEC) -> Instance:
-        return wait_for_ready(self.status, timeout_sec=timeout_sec)
+    def wait_for_ready(
+        self,
+        *,
+        timeout_sec: int = DEFAULT_READY_TIMEOUT_SEC,
+        after_timestamp: int = 0,
+        stable_sec: float = 0,
+    ) -> Instance:
+        return wait_for_ready(
+            self.status,
+            timeout_sec=timeout_sec,
+            after_timestamp=after_timestamp,
+            stable_sec=stable_sec,
+        )
 
 
 def default_instances_dir() -> Path:
@@ -384,17 +395,30 @@ def wait_for_ready(
     *,
     timeout_sec: int = DEFAULT_READY_TIMEOUT_SEC,
     poll_interval_sec: float = DEFAULT_POLL_INTERVAL_SEC,
+    after_timestamp: int = 0,
+    stable_sec: float = 0,
 ) -> Instance:
     deadline = time.monotonic() + timeout_sec
     latest: Instance | None = None
+    ready_since: float | None = None
     while time.monotonic() < deadline:
         time.sleep(poll_interval_sec)
         try:
             latest = resolve()
         except DiscoveryError:
+            ready_since = None
+            continue
+        if after_timestamp and latest.timestamp <= after_timestamp:
+            ready_since = None
             continue
         if latest.state == "ready":
-            return latest
+            now = time.monotonic()
+            if ready_since is None:
+                ready_since = now
+            if now - ready_since >= stable_sec:
+                return latest
+        else:
+            ready_since = None
     detail = f" last_state={latest.state}" if latest is not None else ""
     raise DiscoveryError(f"timed out waiting for Unity compilation ({timeout_sec}s).{detail}")
 

@@ -129,14 +129,15 @@ from unity_bridge import UnityBridgeAdapter
 bridge = UnityBridgeAdapter(project=r"D:\UnityProjects\MyGame")
 
 bridge.refresh_assets()
-bridge.refresh_assets(paths=[r"D:\UnityProjects\MyGame\Assets\Scripts\Player.cs"])
+bridge.refresh_assets(paths=[r"D:\UnityProjects\MyGame\Assets\Scripts\Player.cs"], wait=True)
 logs = bridge.read_console(count=50, types=["error", "warning", "log"])
 tests = bridge.run_tests(mode="EditMode")
 ```
 
 `refresh_assets()` without paths runs a full Unity asset refresh. Passing
 `paths` imports only those asset paths; absolute paths inside the Unity project
-are normalized by the connector.
+are normalized by the connector. Use `wait=True` for agent workflows that need
+to wait for a stable Unity `ready` heartbeat after refresh/import.
 
 The adapter is intentionally thin. It maps friendly Python methods to connector
 commands, but it does not add an allowlist or denylist policy layer. Raw access

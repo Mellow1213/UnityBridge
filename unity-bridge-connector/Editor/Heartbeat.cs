@@ -16,8 +16,11 @@ namespace UnityCliConnector
 
         static double s_LastWrite;
         const double INTERVAL = 0.5;
+        const double REFRESH_GRACE_SECONDS = 1.0;
+        const double COMPILE_GRACE_SECONDS = 5.0;
         const string CONNECTOR_VERSION = "0.1.0";
         static string s_ForcedState;
+        static double s_RefreshRequestTime;
         static double s_CompileRequestTime;
         static string s_FilePath;
 
@@ -26,7 +29,13 @@ namespace UnityCliConnector
             EditorApplication.update += Tick;
             EditorApplication.quitting += Cleanup;
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
-            AssemblyReloadEvents.afterAssemblyReload += () => { s_ForcedState = null; s_LastWrite = 0; };
+            AssemblyReloadEvents.afterAssemblyReload += () =>
+            {
+                s_ForcedState = null;
+                s_RefreshRequestTime = 0;
+                s_CompileRequestTime = 0;
+                s_LastWrite = 0;
+            };
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
         }
 
@@ -45,6 +54,16 @@ namespace UnityCliConnector
         {
             s_ForcedState = state;
             Write();
+        }
+
+        /// <summary>
+        /// Marks that asset refresh/import was requested. Keeps "refreshing"
+        /// visible briefly so external waiters do not pass an older "ready".
+        /// </summary>
+        public static void MarkRefreshRequested()
+        {
+            s_RefreshRequestTime = EditorApplication.timeSinceStartup;
+            WriteState("refreshing");
         }
 
         /// <summary>
@@ -67,12 +86,24 @@ namespace UnityCliConnector
 
             if (s_CompileRequestTime > 0)
             {
-                if (now - s_CompileRequestTime < 3.0 && EditorApplication.isCompiling == false)
+                if (now - s_CompileRequestTime < COMPILE_GRACE_SECONDS && EditorApplication.isCompiling == false)
                 {
                     Write();
                     return;
                 }
                 s_CompileRequestTime = 0;
+            }
+
+            if (s_RefreshRequestTime > 0)
+            {
+                if (now - s_RefreshRequestTime < REFRESH_GRACE_SECONDS &&
+                    EditorApplication.isUpdating == false &&
+                    EditorApplication.isCompiling == false)
+                {
+                    Write();
+                    return;
+                }
+                s_RefreshRequestTime = 0;
             }
 
             s_ForcedState = null;

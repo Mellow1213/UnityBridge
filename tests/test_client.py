@@ -32,6 +32,7 @@ from unity_bridge.adapter import wait_for_test_results
 from unity_bridge.adapter import TEST_FRAMEWORK_MISSING_MESSAGE
 from unity_bridge.cli import main as cli_main
 from unity_bridge.client import default_instances_dir
+from unity_bridge.client import wait_for_ready
 
 
 def write_instance(directory: Path, name: str, **overrides: object) -> Path:
@@ -256,6 +257,32 @@ class DiscoveryTests(unittest.TestCase):
             )
             self.assertNotIn(str(missing), str(cm.exception))
 
+    def test_wait_for_ready_requires_newer_stable_ready(self) -> None:
+        sequence = [
+            Instance(state="ready", project_path="D:/Game", port=8090, pid=1, timestamp=10),
+            Instance(state="compiling", project_path="D:/Game", port=8090, pid=1, timestamp=11),
+            Instance(state="ready", project_path="D:/Game", port=8090, pid=1, timestamp=12),
+            Instance(state="ready", project_path="D:/Game", port=8090, pid=1, timestamp=12),
+            Instance(state="ready", project_path="D:/Game", port=8090, pid=1, timestamp=12),
+        ]
+        calls = {"count": 0}
+
+        def resolve() -> Instance:
+            index = min(calls["count"], len(sequence) - 1)
+            calls["count"] += 1
+            return sequence[index]
+
+        instance = wait_for_ready(
+            resolve,
+            timeout_sec=1,
+            poll_interval_sec=0.01,
+            after_timestamp=10,
+            stable_sec=0.015,
+        )
+
+        self.assertEqual(instance.timestamp, 12)
+        self.assertGreaterEqual(calls["count"], 4)
+
 
 class HttpClientTests(unittest.TestCase):
     def test_send_command_posts_unity_command_json_and_parses_response(self) -> None:
@@ -341,6 +368,50 @@ class AdapterTests(unittest.TestCase):
                         "mode": "if_dirty",
                         "force": False,
                         "paths": [r"D:\Game\Assets\Scripts\Player.cs"],
+                        "compile": "none",
+                    },
+                },
+            )
+
+    def test_adapter_refresh_assets_can_wait_for_new_ready_heartbeat(self) -> None:
+        response_body = json.dumps(
+            {
+                "success": True,
+                "message": "Refresh requested.",
+                "data": {"refresh_triggered": True, "scope": "paths"},
+            }
+        ).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port, timestamp=10)
+            adapter = UnityBridgeAdapter(instances_dir=directory, process_checker=lambda pid: False)
+
+            def write_ready() -> None:
+                write_instance(directory, "game", port=server.port, timestamp=20)
+
+            timer = threading.Timer(0.05, write_ready)
+            timer.start()
+            try:
+                result = adapter.refresh_assets(
+                    paths=["Assets/Scripts/Player.cs"],
+                    wait=True,
+                    timeout_sec=2,
+                    stable_sec=0.01,
+                    poll_interval_sec=0.01,
+                )
+            finally:
+                timer.cancel()
+
+            self.assertTrue(result.success)
+            self.assertEqual(result.data["ready"]["timestamp"], 20)
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "refresh_unity",
+                    "params": {
+                        "mode": "if_dirty",
+                        "force": False,
+                        "paths": ["Assets/Scripts/Player.cs"],
                         "compile": "none",
                     },
                 },

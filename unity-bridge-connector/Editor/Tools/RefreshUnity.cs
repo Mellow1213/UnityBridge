@@ -39,6 +39,7 @@ namespace UnityCliConnector.Tools
             if (!pathsResult.IsSuccess)
                 return new ErrorResponse(pathsResult.ErrorMessage);
             var requestedPaths = pathsResult.Value;
+            var explicitCompileRequested = string.Equals(compile, "request", StringComparison.OrdinalIgnoreCase);
 
             bool compileRequested = false;
 
@@ -52,11 +53,7 @@ namespace UnityCliConnector.Tools
                 : ImportAssetOptions.ForceSynchronousImport;
 
             var importedPaths = new List<string>();
-            if (requestedPaths.Count == 0)
-            {
-                AssetDatabase.Refresh(options);
-            }
-            else
+            if (requestedPaths.Count > 0)
             {
                 var seenComparer = Application.platform == RuntimePlatform.WindowsEditor
                     ? StringComparer.OrdinalIgnoreCase
@@ -72,17 +69,33 @@ namespace UnityCliConnector.Tools
                     if (!seen.Add(assetPath))
                         continue;
 
-                    var importOptions = AssetDatabase.IsValidFolder(assetPath)
-                        ? options | ImportAssetOptions.ImportRecursive
-                        : options;
-                    AssetDatabase.ImportAsset(assetPath, importOptions);
                     importedPaths.Add(assetPath);
                 }
             }
 
-            if (string.Equals(compile, "request", StringComparison.OrdinalIgnoreCase))
-            {
+            var compilePending = explicitCompileRequested || ContainsScriptCompilationPath(importedPaths);
+            if (compilePending)
                 Heartbeat.MarkCompileRequested();
+            else
+                Heartbeat.MarkRefreshRequested();
+
+            if (importedPaths.Count == 0)
+            {
+                AssetDatabase.Refresh(options);
+            }
+            else
+            {
+                foreach (var assetPath in importedPaths)
+                {
+                    var importOptions = AssetDatabase.IsValidFolder(assetPath)
+                        ? options | ImportAssetOptions.ImportRecursive
+                        : options;
+                    AssetDatabase.ImportAsset(assetPath, importOptions);
+                }
+            }
+
+            if (explicitCompileRequested)
+            {
                 CompilationPipeline.RequestScriptCompilation();
                 compileRequested = true;
             }
@@ -94,6 +107,7 @@ namespace UnityCliConnector.Tools
                 paths = importedPaths,
                 mode = mode,
                 compile_requested = compileRequested,
+                compile_pending = compilePending,
                 force = force,
             });
         }
@@ -200,6 +214,26 @@ namespace UnityCliConnector.Tools
             return path.Equals(normalizedParent, comparison) ||
                    path.StartsWith(normalizedParent + Path.DirectorySeparatorChar, comparison) ||
                    path.StartsWith(normalizedParent + Path.AltDirectorySeparatorChar, comparison);
+        }
+
+        static bool ContainsScriptCompilationPath(List<string> assetPaths)
+        {
+            foreach (var path in assetPaths)
+            {
+                if (MayTriggerScriptCompilation(path))
+                    return true;
+            }
+            return false;
+        }
+
+        static bool MayTriggerScriptCompilation(string assetPath)
+        {
+            return AssetDatabase.IsValidFolder(assetPath) ||
+                   assetPath.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ||
+                   assetPath.EndsWith(".asmdef", StringComparison.OrdinalIgnoreCase) ||
+                   assetPath.EndsWith(".asmref", StringComparison.OrdinalIgnoreCase) ||
+                   assetPath.EndsWith(".rsp", StringComparison.OrdinalIgnoreCase) ||
+                   assetPath.EndsWith(".dll", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

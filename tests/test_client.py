@@ -26,6 +26,8 @@ from unity_bridge import find_active_by_port
 from unity_bridge import find_by_port
 from unity_bridge import scan_instances
 from unity_bridge import send_command
+from unity_bridge.adapter import test_results_path
+from unity_bridge.adapter import wait_for_test_results
 from unity_bridge.cli import main as cli_main
 from unity_bridge.client import default_instances_dir
 
@@ -300,6 +302,86 @@ class AdapterTests(unittest.TestCase):
                 },
             )
 
+    def test_adapter_playmode_tests_wait_for_result_file(self) -> None:
+        response_body = json.dumps(
+            {"success": True, "message": "running", "data": {"port": 0}}
+        ).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp) / "instances"
+            status_dir = Path(tmp) / "status"
+            directory.mkdir()
+            write_instance(directory, "game", port=server.port)
+            adapter = UnityBridgeAdapter(
+                instances_dir=directory,
+                status_dir=status_dir,
+                process_checker=lambda pid: False,
+            )
+
+            def write_results() -> None:
+                result_path = test_results_path(server.port, status_dir=status_dir)
+                result_path.parent.mkdir(parents=True, exist_ok=True)
+                result_path.write_text(
+                    json.dumps(
+                        {
+                            "success": False,
+                            "message": "1 test(s) failed.",
+                            "data": {"total": 1, "passed": 0, "failed": 1},
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+
+            timer = threading.Timer(0.05, write_results)
+            timer.start()
+            try:
+                result = adapter.run_tests(
+                    mode="PlayMode",
+                    timeout_sec=2,
+                    poll_interval_sec=0.01,
+                )
+            finally:
+                timer.cancel()
+
+            self.assertFalse(result.success)
+            self.assertEqual(result.message, "1 test(s) failed.")
+            self.assertEqual(result.data, {"total": 1, "passed": 0, "failed": 1})
+            self.assertFalse(test_results_path(server.port, status_dir=status_dir).exists())
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "run_tests",
+                    "params": {
+                        "mode": "PlayMode",
+                        "allow_dirty_scenes": False,
+                        "auto_save_scenes": False,
+                    },
+                },
+            )
+
+    def test_adapter_playmode_tests_can_return_without_waiting(self) -> None:
+        response_body = json.dumps({"success": True, "message": "running"}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port)
+            adapter = UnityBridgeAdapter(instances_dir=directory, process_checker=lambda pid: False)
+
+            result = adapter.run_tests(mode="PlayMode", wait=False)
+
+            self.assertTrue(result.success)
+            self.assertEqual(result.message, "running")
+
+    def test_wait_for_test_results_fails_if_editor_stopped(self) -> None:
+        stopped = Instance(state="stopped", project_path="D:/Game", port=8090, pid=1, timestamp=1)
+        with TemporaryDirectory() as tmp:
+            with self.assertRaises(DiscoveryError):
+                wait_for_test_results(
+                    8090,
+                    status_dir=Path(tmp),
+                    timeout_sec=2,
+                    poll_interval_sec=0.01,
+                    status_resolver=lambda: stopped,
+                )
+
 
 class CliTests(unittest.TestCase):
     def test_cli_console_command_sends_adapter_request(self) -> None:
@@ -329,6 +411,39 @@ class CliTests(unittest.TestCase):
                 {
                     "command": "console",
                     "params": {"count": 5, "type": "error", "stacktrace": "user"},
+                },
+            )
+
+    def test_cli_playmode_test_can_skip_waiting(self) -> None:
+        response_body = json.dumps({"success": True, "message": "running"}).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port, pid=0)
+
+            stdout = StringIO()
+            with redirect_stdout(stdout):
+                exit_code = cli_main(
+                    [
+                        "--instances-dir",
+                        str(directory),
+                        "test",
+                        "--mode",
+                        "PlayMode",
+                        "--no-wait",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertIn("running", stdout.getvalue())
+            self.assertEqual(
+                server.received[0]["body"],
+                {
+                    "command": "run_tests",
+                    "params": {
+                        "mode": "PlayMode",
+                        "allow_dirty_scenes": False,
+                        "auto_save_scenes": False,
+                    },
                 },
             )
 

@@ -93,6 +93,12 @@ def build_parser() -> argparse.ArgumentParser:
     test.add_argument("--filter", help="Namespace, class, or full test name filter.")
     test.add_argument("--allow-dirty-scenes", action="store_true", help="Run tests with unsaved scene changes.")
     test.add_argument("--auto-save-scenes", action="store_true", help="Save dirty scenes before running tests.")
+    test_wait = test.add_mutually_exclusive_group()
+    test_wait.add_argument("--wait", dest="wait", action="store_true", help="Wait for PlayMode test results.")
+    test_wait.add_argument("--no-wait", dest="wait", action="store_false", help="Return immediately after starting PlayMode tests.")
+    test.set_defaults(wait=None)
+    test.add_argument("--timeout-sec", type=int, default=600, help="PlayMode test result wait timeout in seconds.")
+    test.add_argument("--poll-interval-sec", type=float, default=0.5, help="PlayMode test result poll interval in seconds.")
 
     editor = sub.add_parser("editor", parents=[parent], help="Control Unity Editor play state.")
     editor.add_argument("action", choices=["play", "stop", "pause"], help="Editor action.")
@@ -186,6 +192,9 @@ def main(argv: list[str] | None = None) -> int:
                 filter=args.filter,
                 allow_dirty_scenes=args.allow_dirty_scenes,
                 auto_save_scenes=args.auto_save_scenes,
+                wait=args.wait,
+                timeout_sec=args.timeout_sec,
+                poll_interval_sec=args.poll_interval_sec,
             )
             _print(response, json_output=args.json)
             return 0 if response.success else 1

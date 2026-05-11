@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import time
 from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,8 +9,15 @@ from typing import Any, Iterable
 
 from .client import DEFAULT_TIMEOUT_MS
 from .client import CommandResponse
+from .client import DiscoveryError
+from .client import Instance
 from .client import ProcessDeadChecker
 from .client import UnityClient
+from .client import find_by_port
+
+
+DEFAULT_TEST_TIMEOUT_SEC = 600
+DEFAULT_TEST_POLL_INTERVAL_SEC = 0.5
 
 
 @dataclass(frozen=True)
@@ -56,6 +65,7 @@ class UnityBridgeAdapter:
         port: int | None = None,
         timeout_ms: int = DEFAULT_TIMEOUT_MS,
         instances_dir: str | Path | None = None,
+        status_dir: str | Path | None = None,
         cwd: str | Path | None = None,
         process_checker: ProcessDeadChecker | None = None,
     ) -> None:
@@ -67,6 +77,7 @@ class UnityBridgeAdapter:
             cwd=cwd,
             process_checker=process_checker,
         )
+        self.status_dir = Path(status_dir) if status_dir is not None else default_status_dir()
 
     def call_tool(self, command: str, params: dict[str, Any] | None = None) -> UnityActionResult:
         payload = _compact(params or {})
@@ -127,16 +138,46 @@ class UnityBridgeAdapter:
         filter: str | None = None,
         allow_dirty_scenes: bool = False,
         auto_save_scenes: bool = False,
+        wait: bool | None = None,
+        timeout_sec: int = DEFAULT_TEST_TIMEOUT_SEC,
+        poll_interval_sec: float = DEFAULT_TEST_POLL_INTERVAL_SEC,
     ) -> UnityActionResult:
-        return self._call(
-            "test",
-            "run_tests",
+        payload = _compact(
             {
                 "mode": mode,
                 "filter": filter,
                 "allow_dirty_scenes": allow_dirty_scenes,
                 "auto_save_scenes": auto_save_scenes,
-            },
+            }
+        )
+        target = self.client.discover_instance()
+        response = self.client.call("run_tests", payload, instance=target)
+        result = UnityActionResult.from_response(
+            tool="test",
+            command="run_tests",
+            params=payload,
+            response=response,
+        )
+        should_wait = wait if wait is not None else mode.lower() == "playmode"
+        if not should_wait or mode.lower() != "playmode" or response.message != "running":
+            return result
+
+        final_response = wait_for_test_results(
+            target.port,
+            status_dir=self.status_dir,
+            timeout_sec=timeout_sec,
+            poll_interval_sec=poll_interval_sec,
+            status_resolver=lambda: find_by_port(
+                target.port,
+                instances_dir=self.client.instances_dir,
+                process_checker=self.client.process_checker,
+            ),
+        )
+        return UnityActionResult.from_response(
+            tool="test",
+            command="run_tests",
+            params=payload,
+            response=final_response,
         )
 
     def editor_play(self, *, wait: bool = False) -> UnityActionResult:
@@ -223,6 +264,52 @@ class UnityBridgeAdapter:
 
 def _compact(params: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in params.items() if value is not None}
+
+
+def default_status_dir() -> Path:
+    return Path.home() / ".unity-bridge" / "status"
+
+
+def test_results_path(port: int, *, status_dir: str | Path | None = None) -> Path:
+    directory = Path(status_dir) if status_dir is not None else default_status_dir()
+    return directory / f"test-results-{port}.json"
+
+
+def wait_for_test_results(
+    port: int,
+    *,
+    status_dir: str | Path | None = None,
+    timeout_sec: int = DEFAULT_TEST_TIMEOUT_SEC,
+    poll_interval_sec: float = DEFAULT_TEST_POLL_INTERVAL_SEC,
+    status_resolver: Any | None = None,
+) -> CommandResponse:
+    path = test_results_path(port, status_dir=status_dir)
+    deadline = time.monotonic() + timeout_sec
+    while time.monotonic() < deadline:
+        if path.exists():
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise DiscoveryError(f"failed to read PlayMode test results: {exc}") from exc
+            finally:
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
+            if not isinstance(raw, dict):
+                raise DiscoveryError(f"invalid PlayMode test results file: {path}")
+            return CommandResponse.from_dict(raw)
+
+        if status_resolver is not None:
+            try:
+                instance = status_resolver()
+            except DiscoveryError:
+                instance = None
+            if isinstance(instance, Instance) and instance.state == "stopped":
+                raise DiscoveryError(f"unity editor has stopped while waiting for PlayMode test results (port {port})")
+
+        time.sleep(poll_interval_sec)
+    raise DiscoveryError(f"timed out waiting for PlayMode test results ({timeout_sec}s)")
 
 
 def _join_csv(value: str | Iterable[str] | None, *, default: str) -> str:

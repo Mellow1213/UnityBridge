@@ -102,7 +102,13 @@ unity-bridge test --mode PlayMode
 unity-bridge test --filter MyTestClass
 unity-bridge test --allow-dirty-scenes
 unity-bridge test --auto-save-scenes
+unity-bridge test --mode PlayMode --timeout-sec 600
+unity-bridge test --mode PlayMode --no-wait
 ```
+
+`PlayMode` tests wait for Unity's result file by default, then return the final
+success or failure. Test failures therefore produce a failing CLI exit code.
+Use `--no-wait` when you intentionally want to return immediately.
 
 ### Unity Menu
 

@@ -102,7 +102,13 @@ unity-bridge test --mode PlayMode
 unity-bridge test --filter MyTestClass
 unity-bridge test --allow-dirty-scenes
 unity-bridge test --auto-save-scenes
+unity-bridge test --mode PlayMode --timeout-sec 600
+unity-bridge test --mode PlayMode --no-wait
 ```
+
+`PlayMode` 테스트는 기본적으로 Unity가 결과 파일을 쓸 때까지 기다린 뒤 최종 성공/실패를
+반환합니다. 즉, 테스트 실패 시 CLI exit code도 실패로 처리됩니다. 즉시 반환이 필요하면
+`--no-wait`를 사용하세요.
 
 ### Unity 메뉴
 

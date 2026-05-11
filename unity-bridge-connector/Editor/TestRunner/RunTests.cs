@@ -204,7 +204,7 @@ namespace UnityCliConnector.TestRunner
             try
             {
                 Directory.CreateDirectory(StatusDir);
-                File.WriteAllText(ResultsFilePath(port), JsonConvert.SerializeObject(data));
+                AtomicFile.WriteAllText(ResultsFilePath(port), JsonConvert.SerializeObject(data));
             }
             catch (Exception ex)
             {

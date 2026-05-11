@@ -6,6 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -15,6 +16,9 @@ namespace UnityCliConnector.Tools
     [UnityCliTool(Name = "exec", Description = "Execute arbitrary C# code at runtime. Full access to Unity and all loaded assemblies.")]
     public static class ExecuteCsharp
     {
+        const int CompileTimeoutMs = 30000;
+        const int OutputDrainTimeoutMs = 5000;
+
         private static readonly string[] DefaultUsings =
         {
             "System",
@@ -164,9 +168,24 @@ namespace UnityCliConnector.Tools
 
                 using (var proc = Process.Start(psi))
                 {
-                    var stdout = proc.StandardOutput.ReadToEnd();
-                    var stderr = proc.StandardError.ReadToEnd();
-                    proc.WaitForExit(30000);
+                    if (proc == null)
+                        return new ErrorResponse("Failed to start C# compiler.");
+
+                    var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+                    var stderrTask = proc.StandardError.ReadToEndAsync();
+
+                    if (!proc.WaitForExit(CompileTimeoutMs))
+                    {
+                        try { proc.Kill(); } catch { }
+                        try { proc.WaitForExit(OutputDrainTimeoutMs); } catch { }
+                        return new ErrorResponse($"Compiler timed out after {CompileTimeoutMs / 1000}s and was killed.");
+                    }
+
+                    if (!Task.WaitAll(new Task[] { stdoutTask, stderrTask }, OutputDrainTimeoutMs))
+                        return new ErrorResponse("Compiler output read timed out.");
+
+                    var stdout = stdoutTask.Result;
+                    var stderr = stderrTask.Result;
 
                     if (proc.ExitCode != 0)
                     {

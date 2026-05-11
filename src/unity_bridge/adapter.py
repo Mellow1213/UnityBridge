@@ -296,20 +296,21 @@ def wait_for_test_results(
 ) -> CommandResponse:
     path = test_results_path(port, status_dir=status_dir)
     deadline = time.monotonic() + timeout_sec
+    last_read_error: Exception | None = None
     while time.monotonic() < deadline:
         if path.exists():
             try:
                 raw = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as exc:
-                raise DiscoveryError(f"failed to read PlayMode test results: {exc}") from exc
-            finally:
+                last_read_error = exc
+            else:
+                if not isinstance(raw, dict):
+                    raise DiscoveryError(f"invalid PlayMode test results file: {path}")
                 try:
                     path.unlink()
                 except OSError:
                     pass
-            if not isinstance(raw, dict):
-                raise DiscoveryError(f"invalid PlayMode test results file: {path}")
-            return CommandResponse.from_dict(raw)
+                return CommandResponse.from_dict(raw)
 
         if status_resolver is not None:
             try:
@@ -320,7 +321,8 @@ def wait_for_test_results(
                 raise DiscoveryError(f"unity editor has stopped while waiting for PlayMode test results (port {port})")
 
         time.sleep(poll_interval_sec)
-    raise DiscoveryError(f"timed out waiting for PlayMode test results ({timeout_sec}s)")
+    detail = f": last read error: {last_read_error}" if last_read_error is not None else ""
+    raise DiscoveryError(f"timed out waiting for PlayMode test results ({timeout_sec}s){detail}")
 
 
 def _join_csv(value: str | Iterable[str] | None, *, default: str) -> str:

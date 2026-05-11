@@ -26,16 +26,18 @@ unity-bridge --json console --count 20
 
 | Option | Description |
 |--------|-------------|
-| `--project PATH_OR_TEXT` | Select a Unity instance by project path substring. |
+| `--project PATH_OR_TEXT` | Select a Unity instance by exact project path, path suffix, or exact project folder name. |
 | `--port PORT` | Select a Unity instance by port. |
 | `--timeout-ms MS` | HTTP request timeout. Default: `120000`. |
 | `--instances-dir PATH` | Use a heartbeat directory other than `~/.unity-bridge/instances`. |
 | `--json` | Print JSON output for agents or other programs. |
 
 `--project` checks exact project paths, whether the supplied path is inside a
-project, and project folder names before falling back to substring search. If a
-substring matches multiple Unity instances, UnityBridge returns an error instead
-of choosing one arbitrarily.
+project, and path-segment suffixes such as `UnityProjects/MyGame` or `MyGame`.
+It does not auto-select substring-only matches, so `Game` will not match
+`GamePrototype`. If a suffix matches multiple Unity instances, UnityBridge
+returns an error instead of choosing one arbitrarily. For agent integrations,
+prefer a full project path or `--port`.
 
 ## Command List
 

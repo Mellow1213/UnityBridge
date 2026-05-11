@@ -26,15 +26,16 @@ unity-bridge --json console --count 20
 
 | 옵션 | 설명 |
 |------|------|
-| `--project PATH_OR_TEXT` | 프로젝트 경로 일부로 Unity 인스턴스를 선택합니다. |
+| `--project PATH_OR_TEXT` | 정확한 프로젝트 경로, 경로 suffix, 또는 정확한 프로젝트 폴더 이름으로 Unity 인스턴스를 선택합니다. |
 | `--port PORT` | 포트 번호로 Unity 인스턴스를 선택합니다. |
 | `--timeout-ms MS` | HTTP 요청 타임아웃입니다. 기본값은 `120000`입니다. |
 | `--instances-dir PATH` | 기본 `~/.unity-bridge/instances` 대신 다른 heartbeat 폴더를 사용합니다. |
 | `--json` | 결과를 JSON으로 출력합니다. 에이전트가 파싱할 때 사용합니다. |
 
-`--project`는 정확한 프로젝트 경로, 현재 경로가 프로젝트 내부인지 여부, 프로젝트 폴더 이름을
-먼저 확인합니다. 마지막 fallback으로 부분 문자열 검색을 사용하며, 여러 Unity 인스턴스가 동시에
-매칭되면 임의 선택하지 않고 에러를 반환합니다.
+`--project`는 정확한 프로젝트 경로, 입력 경로가 프로젝트 내부인지 여부, `UnityProjects/MyGame`이나
+`MyGame` 같은 경로 세그먼트 suffix를 확인합니다. `Game`이 `GamePrototype`에 매칭되는 식의 부분
+문자열 자동 선택은 하지 않습니다. suffix가 여러 Unity 인스턴스에 동시에 매칭되면 임의 선택하지 않고
+에러를 반환합니다. Agent 통합에서는 전체 프로젝트 경로나 `--port` 사용을 권장합니다.
 
 ## 명령어 목록
 

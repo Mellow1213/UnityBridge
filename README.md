@@ -9,8 +9,8 @@ The Python client does not require a separate CLI binary. It talks directly to
 the Unity connector by:
 
 1. Reading instance heartbeat files from `~/.unity-bridge/instances/*.json`.
-2. Selecting a running Unity Editor by port, project path, current working
-   directory, or most recent heartbeat.
+2. Selecting a running Unity Editor by port, exact project path, path suffix,
+   current working directory, or most recent heartbeat.
 3. Sending JSON to `http://127.0.0.1:{port}/command`.
 
 It is intentionally separate from `D:\Code\Codex\Agent` so it can be tested
@@ -30,6 +30,8 @@ https://github.com/zjxps2007/UnityBridge.git?path=unity-bridge-connector
 The connector starts automatically when the Unity Editor opens. It writes
 heartbeat files under `~/.unity-bridge/instances/`, then the Python client can
 discover the running Editor and send commands to `http://127.0.0.1:{port}/command`.
+Heartbeat files are written through a temporary file and atomic replacement so
+clients do not read partially written JSON during discovery.
 
 ### Recommended Editor setting
 

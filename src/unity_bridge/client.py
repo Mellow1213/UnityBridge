@@ -281,16 +281,16 @@ def discover_instance(
         if containing:
             return _most_specific(containing)
 
-        named = [instance for instance in alive if _path_name(instance.project_path) == project_filter]
-        if named:
-            return _most_recent(named)
-
-        substring = [instance for instance in alive if project_filter in _path_key(instance.project_path)]
-        if len(substring) == 1:
-            return substring[0]
-        if len(substring) > 1:
+        suffix = [
+            instance
+            for instance in alive
+            if _has_path_suffix(_path_key(instance.project_path), project_filter)
+        ]
+        if len(suffix) == 1:
+            return suffix[0]
+        if len(suffix) > 1:
             raise DiscoveryError(
-                f"multiple Unity instances match project '{project}': {_format_instance_matches(substring)}"
+                f"multiple Unity instances match project '{project}': {_format_instance_matches(suffix)}"
             )
         raise DiscoveryError(f"no Unity instance found for project: {project}")
 
@@ -441,13 +441,20 @@ def _path_key(value: str | Path) -> str:
     return path.casefold() if os.name == "nt" else path
 
 
-def _path_name(value: str | Path) -> str:
-    path = _path_key(value)
-    return path.rsplit("/", 1)[-1]
-
-
 def _is_same_or_child(path: str, parent: str) -> bool:
-    return path == parent or path.startswith(parent + "/")
+    path_parts = _path_parts(path)
+    parent_parts = _path_parts(parent)
+    return len(path_parts) >= len(parent_parts) and path_parts[: len(parent_parts)] == parent_parts
+
+
+def _has_path_suffix(path: str, suffix: str) -> bool:
+    path_parts = _path_parts(path)
+    suffix_parts = _path_parts(suffix)
+    return len(path_parts) >= len(suffix_parts) and path_parts[-len(suffix_parts) :] == suffix_parts
+
+
+def _path_parts(value: str | Path) -> tuple[str, ...]:
+    return tuple(part for part in _path_key(value).split("/") if part)
 
 
 def _most_recent(instances: list[Instance]) -> Instance:

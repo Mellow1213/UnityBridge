@@ -82,7 +82,7 @@ namespace UnityCliConnector
         static string GetFilePath()
         {
             if (s_FilePath != null) return s_FilePath;
-            var projectPath = Application.dataPath.Replace("/Assets", "");
+            var projectPath = GetProjectPath();
             using var md5 = MD5.Create();
             var hash = BitConverter.ToString(md5.ComputeHash(Encoding.UTF8.GetBytes(projectPath)))
                 .Replace("-", "").Substring(0, 16).ToLower();
@@ -90,12 +90,21 @@ namespace UnityCliConnector
             return s_FilePath;
         }
 
+        static string GetProjectPath()
+        {
+            var projectPath = Path.GetDirectoryName(Application.dataPath);
+            if (string.IsNullOrEmpty(projectPath))
+                projectPath = Application.dataPath;
+            return projectPath.Replace('\\', '/');
+        }
+
         static void Write()
         {
+            var projectPath = GetProjectPath();
             var status = new
             {
                 state = s_ForcedState ?? GetState(),
-                projectPath = Application.dataPath.Replace("/Assets", ""),
+                projectPath,
                 port = HttpServer.Port,
                 pid = System.Diagnostics.Process.GetCurrentProcess().Id,
                 unityVersion = Application.unityVersion,
@@ -107,7 +116,7 @@ namespace UnityCliConnector
             try
             {
                 Directory.CreateDirectory(s_Dir);
-                File.WriteAllText(GetFilePath(), JsonConvert.SerializeObject(status));
+                AtomicFile.WriteAllText(GetFilePath(), JsonConvert.SerializeObject(status));
             }
             catch
             {

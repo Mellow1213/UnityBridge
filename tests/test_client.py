@@ -160,7 +160,7 @@ class DiscoveryTests(unittest.TestCase):
             self.assertEqual(by_cwd.port, 8090)
             self.assertEqual(by_recent.port, 8091)
 
-    def test_discover_instance_prefers_project_name_before_substring(self) -> None:
+    def test_discover_instance_matches_exact_project_folder_name(self) -> None:
         with TemporaryDirectory() as tmp:
             directory = Path(tmp)
             write_instance(directory, "game", projectPath="D:/UnityProjects/Game", port=8090, timestamp=10)
@@ -174,15 +174,43 @@ class DiscoveryTests(unittest.TestCase):
 
             self.assertEqual(instance.port, 8090)
 
-    def test_discover_instance_reports_ambiguous_project_substring(self) -> None:
+    def test_discover_instance_matches_project_path_suffix_by_segments(self) -> None:
         with TemporaryDirectory() as tmp:
             directory = Path(tmp)
             write_instance(directory, "game", projectPath="D:/UnityProjects/Game", port=8090, timestamp=10)
             write_instance(directory, "tool", projectPath="D:/UnityProjects/Tool", port=8091, timestamp=20)
 
+            instance = discover_instance(
+                project="UnityProjects/Game",
+                instances_dir=directory,
+                process_checker=lambda pid: False,
+            )
+
+            self.assertEqual(instance.port, 8090)
+
+    def test_discover_instance_rejects_substring_only_project_match(self) -> None:
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            write_instance(directory, "prototype", projectPath="D:/UnityProjects/GamePrototype", port=8091, timestamp=20)
+
+            with self.assertRaises(DiscoveryError) as cm:
+                discover_instance(
+                    project="Game",
+                    instances_dir=directory,
+                    process_checker=lambda pid: False,
+                )
+
+            self.assertIn("no Unity instance found", str(cm.exception))
+
+    def test_discover_instance_reports_ambiguous_project_folder_name(self) -> None:
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            write_instance(directory, "game-a", projectPath="D:/UnityProjects/Game", port=8090, timestamp=10)
+            write_instance(directory, "game-b", projectPath="E:/UnityProjects/Game", port=8091, timestamp=20)
+
             with self.assertRaises(DiscoveryError):
                 discover_instance(
-                    project="UnityProjects",
+                    project="Game",
                     instances_dir=directory,
                     process_checker=lambda pid: False,
                 )
@@ -432,6 +460,52 @@ class AdapterTests(unittest.TestCase):
 
             self.assertTrue(result.success)
             self.assertEqual(result.message, "running")
+
+    def test_wait_for_test_results_retries_partial_json_until_valid(self) -> None:
+        with TemporaryDirectory() as tmp:
+            status_dir = Path(tmp)
+            result_path = test_results_path(8090, status_dir=status_dir)
+            result_path.parent.mkdir(parents=True, exist_ok=True)
+            result_path.write_text("{", encoding="utf-8")
+
+            def finish_write() -> None:
+                result_path.write_text(
+                    json.dumps({"success": True, "message": "ok", "data": {"passed": 1}}),
+                    encoding="utf-8",
+                )
+
+            timer = threading.Timer(0.05, finish_write)
+            timer.start()
+            try:
+                response = wait_for_test_results(
+                    8090,
+                    status_dir=status_dir,
+                    timeout_sec=2,
+                    poll_interval_sec=0.01,
+                )
+            finally:
+                timer.cancel()
+
+            self.assertEqual(response, CommandResponse(success=True, message="ok", data={"passed": 1}))
+            self.assertFalse(result_path.exists())
+
+    def test_wait_for_test_results_keeps_partial_json_on_timeout(self) -> None:
+        with TemporaryDirectory() as tmp:
+            status_dir = Path(tmp)
+            result_path = test_results_path(8090, status_dir=status_dir)
+            result_path.parent.mkdir(parents=True, exist_ok=True)
+            result_path.write_text("{", encoding="utf-8")
+
+            with self.assertRaises(DiscoveryError) as cm:
+                wait_for_test_results(
+                    8090,
+                    status_dir=status_dir,
+                    timeout_sec=0.05,
+                    poll_interval_sec=0.01,
+                )
+
+            self.assertIn("last read error", str(cm.exception))
+            self.assertTrue(result_path.exists())
 
     def test_adapter_tests_report_missing_test_framework_like_unity_cli(self) -> None:
         response_body = json.dumps(

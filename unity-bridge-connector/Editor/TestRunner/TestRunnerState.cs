@@ -28,7 +28,7 @@ namespace UnityCliConnector.TestRunner
             try
             {
                 Directory.CreateDirectory(RunTests.StatusDir);
-                File.WriteAllText(PendingFilePath(port), JsonConvert.SerializeObject(pending));
+                AtomicFile.WriteAllText(PendingFilePath(port), JsonConvert.SerializeObject(pending));
             }
             catch { }
         }

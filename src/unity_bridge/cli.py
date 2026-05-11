@@ -49,7 +49,7 @@ def add_common_options(
 ) -> None:
     default = argparse.SUPPRESS if suppress_defaults else None
     timeout_default = argparse.SUPPRESS if suppress_defaults else 120_000
-    parser.add_argument("--project", default=default, help="Select Unity instance by project path substring.")
+    parser.add_argument("--project", default=default, help="Select Unity instance by exact project path, path suffix, or folder name.")
     parser.add_argument("--port", type=int, default=default, help="Select Unity instance by port.")
     parser.add_argument("--timeout-ms", type=int, default=timeout_default, help="HTTP timeout in milliseconds.")
     parser.add_argument("--instances-dir", default=default, help="Override ~/.unity-bridge/instances.")

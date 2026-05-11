@@ -28,6 +28,7 @@ from unity_bridge import scan_instances
 from unity_bridge import send_command
 from unity_bridge.adapter import test_results_path
 from unity_bridge.adapter import wait_for_test_results
+from unity_bridge.adapter import TEST_FRAMEWORK_MISSING_MESSAGE
 from unity_bridge.cli import main as cli_main
 from unity_bridge.client import default_instances_dir
 
@@ -369,6 +370,20 @@ class AdapterTests(unittest.TestCase):
 
             self.assertTrue(result.success)
             self.assertEqual(result.message, "running")
+
+    def test_adapter_tests_report_missing_test_framework_like_unity_cli(self) -> None:
+        response_body = json.dumps(
+            {"success": False, "message": "Unknown command: run_tests"}
+        ).encode("utf-8")
+        with TemporaryDirectory() as tmp, FakeUnityServer(response_body) as server:
+            directory = Path(tmp)
+            write_instance(directory, "game", port=server.port)
+            adapter = UnityBridgeAdapter(instances_dir=directory, process_checker=lambda pid: False)
+
+            result = adapter.run_tests()
+
+            self.assertFalse(result.success)
+            self.assertEqual(result.message, TEST_FRAMEWORK_MISSING_MESSAGE)
 
     def test_wait_for_test_results_fails_if_editor_stopped(self) -> None:
         stopped = Instance(state="stopped", project_path="D:/Game", port=8090, pid=1, timestamp=1)

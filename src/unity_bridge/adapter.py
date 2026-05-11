@@ -18,6 +18,11 @@ from .client import find_by_port
 
 DEFAULT_TEST_TIMEOUT_SEC = 600
 DEFAULT_TEST_POLL_INTERVAL_SEC = 0.5
+TEST_FRAMEWORK_MISSING_MESSAGE = (
+    "'run_tests' is not available.\n"
+    "Install the Unity Test Framework package:\n"
+    "  Window > Package Manager > search 'Test Framework' > Install"
+)
 
 
 @dataclass(frozen=True)
@@ -152,6 +157,8 @@ class UnityBridgeAdapter:
         )
         target = self.client.discover_instance()
         response = self.client.call("run_tests", payload, instance=target)
+        if _is_unknown_command_response(response, "run_tests"):
+            response = CommandResponse(success=False, message=TEST_FRAMEWORK_MISSING_MESSAGE)
         result = UnityActionResult.from_response(
             tool="test",
             command="run_tests",
@@ -264,6 +271,10 @@ class UnityBridgeAdapter:
 
 def _compact(params: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in params.items() if value is not None}
+
+
+def _is_unknown_command_response(response: CommandResponse, command: str) -> bool:
+    return not response.success and "Unknown command" in response.message and command in response.message
 
 
 def default_status_dir() -> Path:

@@ -110,6 +110,11 @@ unity-bridge test --mode PlayMode --no-wait
 반환합니다. 즉, 테스트 실패 시 CLI exit code도 실패로 처리됩니다. 즉시 반환이 필요하면
 `--no-wait`를 사용하세요.
 
+`test` 명령은 Unity Test Framework(`com.unity.test-framework`)가 설치된 프로젝트에서만
+사용할 수 있습니다. UnityBridge는 이 패키지를 자동 설치하지 않습니다. 설치되어 있지 않으면
+`test` 명령은 Test Framework 설치 안내를 반환하고, 다른 UnityBridge 기능은 계속 사용할 수
+있습니다.
+
 ### Unity 메뉴
 
 ```powershell

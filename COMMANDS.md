@@ -110,6 +110,11 @@ unity-bridge test --mode PlayMode --no-wait
 success or failure. Test failures therefore produce a failing CLI exit code.
 Use `--no-wait` when you intentionally want to return immediately.
 
+The `test` command requires Unity Test Framework (`com.unity.test-framework`) in
+the Unity project. UnityBridge does not install that package automatically. If it
+is missing, the `test` command returns an installation hint and the rest of
+UnityBridge remains usable.
+
 ### Unity Menu
 
 ```powershell

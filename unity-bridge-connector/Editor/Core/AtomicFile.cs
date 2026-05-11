@@ -4,7 +4,7 @@ using System.Text;
 
 namespace UnityCliConnector
 {
-    internal static class AtomicFile
+    public static class AtomicFile
     {
         static readonly Encoding s_Utf8 = new UTF8Encoding(false);
 
